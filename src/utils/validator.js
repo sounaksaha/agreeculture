@@ -8,3 +8,9 @@ export const validateDistrict = [
   check('code', 'District code is required').notEmpty().isString(),
   check('name', 'Name is required').notEmpty().isString()
 ];
+
+export const validateSubDistrict = [
+  check('id', 'Please select a district').notEmpty().isString(),
+  check('code', 'SubDistrict code is required').notEmpty().isString(),
+  check('name', 'SubDistrictName is required').notEmpty().isString()
+];
