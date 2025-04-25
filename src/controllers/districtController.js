@@ -31,10 +31,10 @@ export const createDistrict = async (req, res) => {
 
 export const getDistricts = async (req, res) => {
   try {
-    const { searchQuery, skip, limit, page } = getQueryOptions(
-      req,
-      "districtName"
-    );
+    const { searchQuery, skip, limit, page } = getQueryOptions(req, [
+      "districtName",
+      "districtCode",
+    ]);
 
     const districts = await District.find(searchQuery).skip(skip).limit(limit);
 
