@@ -52,7 +52,7 @@ export const login = async (req, res) => {
     return res.status(401).json(new ApiResponse(false, 401, "Invalid login credentials"));
   }
   const accessToken = sendTokens(res, user);
-  res.status(200).json(new ApiResponse(true, 200, "Login Succesfull",{ accessToken }));
+  res.status(200).json(new ApiResponse(true, 200, "Login Succesfull",{ accessToken,role:user.role }));
 };
 
 export const refresh = async (req, res) => {
