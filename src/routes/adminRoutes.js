@@ -5,7 +5,7 @@ import { verifyToken, authorizeRoles } from '../middleware/auth.js';
 import validate from '../middleware/validate.js';
 import { validateDistrict, validateRegistration, validateSubDistrict, validateVillage } from '../utils/validator.js';
 import { createSubDistrict, deleteSubDistrictById, getSubDistrictById, getSubDistricts, updateSubDistrictById } from '../controllers/subDistrictController.js';
-import { createVillage } from '../controllers/villageController.js';
+import { createVillage, getVillage } from '../controllers/villageController.js';
 
 const router = express.Router();
 
@@ -24,6 +24,7 @@ router.put('/subdistrict', verifyToken, authorizeRoles('admin'),validateSubDistr
 router.delete('/subdistrict', verifyToken, authorizeRoles('admin'), deleteSubDistrictById);
 
 router.post('/create-village', verifyToken, authorizeRoles('admin'),validateVillage,validate, createVillage);
+router.get('/villages', verifyToken, authorizeRoles('admin'), getVillage);
 
 
 

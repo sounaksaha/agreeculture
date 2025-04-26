@@ -45,9 +45,9 @@ export const createVillage = async (req, res) => {
   }
 };
 
-export const getSubDistricts = async (req, res) => {
+export const getVillage = async (req, res) => {
   try {
-    const { searchQuery, skip, limit, page } = getQueryOptions(req, "subDistrictName");
+    const { searchQuery, skip, limit, page } = getQueryOptions(req, "villageName");
 
     const search = req.query.search || "";
 
@@ -65,7 +65,7 @@ export const getSubDistricts = async (req, res) => {
 
     const lookupStage = {
       $lookup: {
-        from: "villages",
+        from: "subdistricts",
         localField: "subDistrict",
         foreignField: "_id",
         as: "subDistrict",
@@ -78,9 +78,9 @@ export const getSubDistricts = async (req, res) => {
       ? {
           $match: {
             $or: [
-              { subDistrictName: { $regex: search, $options: "i" } },
-              { subDistrictCode: { $regex: search, $options: "i" } },
-              { "district.districtName": { $regex: search, $options: "i" } },
+              { villageName: { $regex: search, $options: "i" } },
+              { villageCode: { $regex: search, $options: "i" } },
+              { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
             ],
           },
         }
@@ -94,9 +94,9 @@ export const getSubDistricts = async (req, res) => {
       { $limit: limit },
     ];
 
-    const [subDistricts, total] = await Promise.all([
-      SubDistrict.aggregate(pipeline),
-      SubDistrict.aggregate([
+    const [villages, total] = await Promise.all([
+      Village.aggregate(pipeline),
+      Village.aggregate([
         lookupStage,
         unwindStage,
         ...(search ? [villageNameSearchStage] : []),
@@ -107,11 +107,11 @@ export const getSubDistricts = async (req, res) => {
     const totalItems = total[0]?.total || 0;
 
     res.status(200).json(
-      new ApiResponse(true, 200, "All SubDistricts", {
-        data: subDistricts,
+      new ApiResponse(true, 200, "All Village", {
+        data: villages,
         page,
         perPage: limit,
-        currentCount: subDistricts.length,
+        currentCount: villages.length,
         totalPages: Math.ceil(totalItems / limit),
         totalItems,
       })
