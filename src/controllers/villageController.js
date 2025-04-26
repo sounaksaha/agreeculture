@@ -123,21 +123,21 @@ export const getVillage = async (req, res) => {
   }
 };
 
-export const getSubDistrictById = async (req, res) => {
+export const getVillageById = async (req, res) => {
   const { id } = req.query;
 
   try {
-    const subDistrict = await SubDistrict.findById(id).populate('district'); // Also fetching linked district info if needed
+    const village = await Village.findById(id).populate('subDistrict'); // Also fetching linked district info if needed
 
-    if (!subDistrict) {
+    if (!village) {
       return res
         .status(404)
-        .json(new ApiResponse(false, 404, "Sub-District not found"));
+        .json(new ApiResponse(false, 404, "Village not found"));
     }
 
     res
       .status(200)
-      .json(new ApiResponse(true, 200, "Sub-District fetched successfully", subDistrict));
+      .json(new ApiResponse(true, 200, "Village fetched successfully", village));
   } catch (error) {
     res
       .status(500)
@@ -145,51 +145,51 @@ export const getSubDistrictById = async (req, res) => {
   }
 };
 
-export const updateSubDistrictById = async (req, res) => {
+export const updateVillageById = async (req, res) => {
   const { id } = req.query;
-  const { code, name, districtId } = req.body;
+  const { code, name, subDistrictId } = req.body;
 
   try {
-    const subDistrict = await SubDistrict.findById(id);
+    const village = await Village.findById(id);
 
-    if (!subDistrict) {
+    if (!village) {
       return res
         .status(404)
-        .json(new ApiResponse(false, 404, "Sub-District not found"));
+        .json(new ApiResponse(false, 404, "Village not found"));
     }
 
     // If new code is provided, check for duplicate code (excluding current subdistrict)
-    if (code && code !== subDistrict.subDistrictCode) {
-      const existing = await SubDistrict.findOne({ subDistrictCode: code });
+    if (code && code !== village.villageCode) {
+      const existing = await Village.findOne({ villageCode: code });
       if (existing) {
         return res
           .status(400)
-          .json(new ApiResponse(false, 400, "Sub-District Code already exists"));
+          .json(new ApiResponse(false, 400, "Village Code already exists"));
       }
-      subDistrict.subDistrictCode = code;
+      village.villageCode = code;
     }
 
     // If new districtId is provided, check if that district exists
-    if (districtId) {
-      const districtExists = await District.findById(districtId);
-      if (!districtExists) {
+    if (subDistrictId ) {
+      const subdistrictExists = await SubDistrict.findById(subDistrictId);
+      if (!subdistrictExists) {
         return res
           .status(404)
-          .json(new ApiResponse(false, 404, "Referenced District not found"));
+          .json(new ApiResponse(false, 404, "Referenced Sub District not found"));
       }
-      subDistrict.district = districtId;
+      village.subDistrict = subDistrictId ;
     }
 
     // Update name if provided
     if (name) {
-      subDistrict.subDistrictName = name;
+      village.villageName = name;
     }
 
-    await subDistrict.save();
+    await village.save();
 
     res
       .status(200)
-      .json(new ApiResponse(true, 200, "Sub-District updated successfully", subDistrict));
+      .json(new ApiResponse(true, 200, "Village updated successfully", village));
   } catch (error) {
     res
       .status(500)
@@ -197,16 +197,16 @@ export const updateSubDistrictById = async (req, res) => {
   }
 };
 
-export const deleteSubDistrictById = async (req, res) => {
+export const deleteVillageById = async (req, res) => {
   try {
     const { id } = req.query;
-    const existing = await SubDistrict.findById(id);
+    const existing = await Village.findById(id);
     if (!existing) {
       return res
         .status(404)
-        .json(new ApiResponse(false, 404, "No District Found"));
+        .json(new ApiResponse(false, 404, "No Village Found"));
     }
-    const deleteData = await SubDistrict.findByIdAndDelete(id);
+    const deleteData = await Village.findByIdAndDelete(id);
 
     if (deleteData) {
       return res
