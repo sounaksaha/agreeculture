@@ -1,41 +1,41 @@
 import SubDistrict from "../models/SubDistrict.js";
-import District from "../models/District.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
+import Village from "../models/village.js";
 
-export const createSubDistrict = async (req, res) => {
-  const { code, name, districtId } = req.body;
+export const createVillage = async (req, res) => {
+  const { code, name, subDistrictId } = req.body;
 
   try {
     // Check for duplicate subDistrictCode
-    const existing = await SubDistrict.findOne({ subDistrictCode: code });
+    const existing = await Village.findOne({ villageCode: code });
     if (existing) {
       return res
         .status(400)
         .json(
-          new ApiResponse(false, 400, "Same sub-district Code Already Present")
+          new ApiResponse(false, 400, "Same Village Code Already Present")
         );
     }
 
     // Check if district exists
-    const districtExists = await District.findById(districtId);
-    if (!districtExists) {
+    const subdistrictExists = await SubDistrict.findById(subDistrictId);
+    if (!subdistrictExists) {
       return res
         .status(404)
-        .json(new ApiResponse(false, 404, "Referenced District not found"));
+        .json(new ApiResponse(false, 404, "Referenced SubDistrict not found"));
     }
 
-    const subDistrict = new SubDistrict({
-      subDistrictCode: code,
-      subDistrictName: name,
-      district: districtId,
+    const newvillage = new Village({
+      villageCode: code,
+      villageName: name,
+      subDistrict: subDistrictId,
     });
 
-    await subDistrict.save();
+    await newvillage.save();
 
     res
       .status(201)
-      .json(new ApiResponse(true, 201, "SubDistrict created", subDistrict));
+      .json(new ApiResponse(true, 201, "SubDistrict created", newvillage));
   } catch (error) {
     res
       .status(500)
@@ -44,8 +44,6 @@ export const createSubDistrict = async (req, res) => {
       );
   }
 };
-
-
 
 export const getSubDistricts = async (req, res) => {
   try {
@@ -58,8 +56,8 @@ export const getSubDistricts = async (req, res) => {
       ? {
           $match: {
             $or: [
-              { subDistrictName: { $regex: search, $options: "i" } },
-              { subDistrictCode: { $regex: search, $options: "i" } },
+              { villageName: { $regex: search, $options: "i" } },
+              { villageCode: { $regex: search, $options: "i" } },
             ],
           },
         }
@@ -67,16 +65,16 @@ export const getSubDistricts = async (req, res) => {
 
     const lookupStage = {
       $lookup: {
-        from: "districts",
-        localField: "district",
+        from: "villages",
+        localField: "subDistrict",
         foreignField: "_id",
-        as: "district",
+        as: "subDistrict",
       },
     };
 
-    const unwindStage = { $unwind: "$district" };
+    const unwindStage = { $unwind: "$subDistrict" };
 
-    const districtNameSearchStage = search
+    const villageNameSearchStage = search
       ? {
           $match: {
             $or: [
@@ -91,7 +89,7 @@ export const getSubDistricts = async (req, res) => {
     const pipeline = [
       lookupStage,
       unwindStage,
-      ...(search ? [districtNameSearchStage] : []),
+      ...(search ? [villageNameSearchStage] : []),
       { $skip: skip },
       { $limit: limit },
     ];
@@ -101,7 +99,7 @@ export const getSubDistricts = async (req, res) => {
       SubDistrict.aggregate([
         lookupStage,
         unwindStage,
-        ...(search ? [districtNameSearchStage] : []),
+        ...(search ? [villageNameSearchStage] : []),
         { $count: "total" },
       ]),
     ]);
