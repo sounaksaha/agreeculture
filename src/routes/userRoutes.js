@@ -4,7 +4,7 @@ import { getDistricts } from "../controllers/districtController.js";
 import {
   deleteFarmerById,
   createFarmer,
-  getAllFarmers,
+  updateFarmerById,
 } from "../controllers/farmerController.js";
 import { getVillageByUser } from "../controllers/userController.js";
 
@@ -22,6 +22,13 @@ router.delete(
   verifyToken,
   authorizeRoles("user"),
   deleteFarmerById
+);
+
+router.put(
+  "/update-farmer",
+  verifyToken,
+  authorizeRoles("user"),
+  updateFarmerById
 );
 
 router.get(

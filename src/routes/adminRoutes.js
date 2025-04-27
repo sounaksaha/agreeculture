@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   createDistrict,
   deleteDistrictById,
@@ -6,6 +7,7 @@ import {
   getDistricts,
   updateDistrictById,
 } from "../controllers/districtController.js";
+
 import { verifyToken, authorizeRoles } from "../middleware/auth.js";
 import validate from "../middleware/validate.js";
 import {
@@ -21,6 +23,7 @@ import {
   getSubDistricts,
   updateSubDistrictById,
 } from "../controllers/subDistrictController.js";
+
 import {
   createVillage,
   deleteVillageById,
@@ -28,6 +31,7 @@ import {
   getVillageById,
   updateVillageById,
 } from "../controllers/villageController.js";
+
 import {
   deleteUserById,
   getAllUsers,
