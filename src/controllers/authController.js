@@ -13,8 +13,10 @@ const sendTokens = (res, user) => {
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
+    // secure: true,
+    // sameSite: "Strict",
+    secure: process.env.NODE_ENV === "production", // true only in production (HTTPS)
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", 
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
