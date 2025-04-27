@@ -149,6 +149,13 @@ export const getAllFarmers = async (req, res) => {
       },
     };
 
+    const unwindVillageStage = {
+      $unwind: {
+        path: "$village",
+        preserveNullAndEmptyArrays: true,
+      },
+    };
+
     const baseMatch = {};
 
     // 🔥 Logic: If user is not admin, filter by user
@@ -169,6 +176,7 @@ export const getAllFarmers = async (req, res) => {
       lookupVillageStage,
       lookupSubDistrictStage,
       unwindSubDistrictStage,
+      unwindVillageStage,
       { $match: baseMatch },
       { $skip: skip },
       { $limit: limit },

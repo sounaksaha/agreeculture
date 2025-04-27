@@ -4,7 +4,6 @@ import SubDistrict from "../models/SubDistrict.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
 import Village from "../models/village.js";
 
-
 export const registerUser = async (req, res) => {
   try {
     const { email, password, subDistrict } = req.body;
@@ -247,7 +246,10 @@ export const deleteUserById = async (req, res) => {
 
 export const getVillageByUser = async (req, res) => {
   try {
-    const { searchQuery, skip, limit, page } = getQueryOptions(req, ["villageName", "villageCode"]);
+    const { searchQuery, skip, limit, page } = getQueryOptions(req, [
+      "villageName",
+      "villageCode",
+    ]);
     const search = req.query.search || "";
 
     const userId = req.user.id;
@@ -266,30 +268,40 @@ export const getVillageByUser = async (req, res) => {
         .json(new ApiResponse(false, 400, "User has no assigned Sub-District"));
     }
 
+    const lookupStage = {
+      $lookup: {
+        from: "subdistricts",
+        localField: "subDistrict",
+        foreignField: "_id",
+        as: "subDistrict",
+      },
+    };
+
+    const unwindStage = { $unwind: "$subDistrict" };
+
     const matchStage = {
       $match: {
         subDistrict: user.subDistrict, // Filter villages matching user's subDistrict
         ...(search && {
           $or: [
             { villageName: { $regex: search, $options: "i" } },
-            { villageCode: { $regex: search, $options: "i" } }
-          ]
-        })
-      }
+            { villageCode: { $regex: search, $options: "i" } },
+          ],
+        }),
+      },
     };
 
     const pipeline = [
       matchStage,
+      lookupStage,
+      unwindStage,
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
     ];
 
     const [villages, totalResult] = await Promise.all([
       Village.aggregate(pipeline),
-      Village.aggregate([
-        matchStage,
-        { $count: "total" }
-      ])
+      Village.aggregate([matchStage, { $count: "total" }]),
     ]);
 
     const totalItems = totalResult[0]?.total || 0;
@@ -301,13 +313,15 @@ export const getVillageByUser = async (req, res) => {
         perPage: limit,
         currentCount: villages.length,
         totalPages: Math.ceil(totalItems / limit),
-        totalItems
+        totalItems,
       })
     );
   } catch (error) {
     console.error(error);
-    res.status(500).json(
-      new ApiResponse(false, 500, "Server Error", { error: error.message })
-    );
+    res
+      .status(500)
+      .json(
+        new ApiResponse(false, 500, "Server Error", { error: error.message })
+      );
   }
 };
