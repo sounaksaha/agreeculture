@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import SubDistrict from "../models/SubDistrict.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
+import Village from "../models/village.js";
+
 
 export const registerUser = async (req, res) => {
   try {
@@ -240,5 +242,72 @@ export const deleteUserById = async (req, res) => {
       .json(
         new ApiResponse(false, 500, "server error", { message: err.message })
       );
+  }
+};
+
+export const getVillageByUser = async (req, res) => {
+  try {
+    const { searchQuery, skip, limit, page } = getQueryOptions(req, ["villageName", "villageCode"]);
+    const search = req.query.search || "";
+
+    const userId = req.user.id;
+
+    // Find user and subDistrict
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "User not found"));
+    }
+
+    if (!user.subDistrict) {
+      return res
+        .status(400)
+        .json(new ApiResponse(false, 400, "User has no assigned Sub-District"));
+    }
+
+    const matchStage = {
+      $match: {
+        subDistrict: user.subDistrict, // Filter villages matching user's subDistrict
+        ...(search && {
+          $or: [
+            { villageName: { $regex: search, $options: "i" } },
+            { villageCode: { $regex: search, $options: "i" } }
+          ]
+        })
+      }
+    };
+
+    const pipeline = [
+      matchStage,
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const [villages, totalResult] = await Promise.all([
+      Village.aggregate(pipeline),
+      Village.aggregate([
+        matchStage,
+        { $count: "total" }
+      ])
+    ]);
+
+    const totalItems = totalResult[0]?.total || 0;
+
+    res.status(200).json(
+      new ApiResponse(true, 200, "Villages fetched successfully", {
+        data: villages,
+        page,
+        perPage: limit,
+        currentCount: villages.length,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", { error: error.message })
+    );
   }
 };
