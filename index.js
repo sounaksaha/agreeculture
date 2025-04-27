@@ -20,9 +20,20 @@ import validate from "./src/middleware/validate.js";
 dotenv.config();
 const app = express();
 
+app.set('trust proxy', 1);
+
+// app.use(
+//   cors({
+//     origin: process.env.CORS_ORIGIN,
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      callback(null, origin);
+    },
     credentials: true,
   })
 );
@@ -35,7 +46,12 @@ app.post("/register-admin", validateRegistration, validate, registerAdmin);
 app.post("/login", login);
 app.get("/refresh-token", refresh);
 app.post("/logout", logout);
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "✅ Backend is up and running!",
+    timestamp: new Date().toISOString(),
+  });
+});
 // Protected routes
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
