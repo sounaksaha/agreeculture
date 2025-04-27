@@ -193,3 +193,43 @@ export const getAllFarmers = async (req, res) => {
     );
   }
 };
+
+export const getFarmerById = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const farmer = await Farmer.findById(id)
+      .populate({
+        path: 'subDistrict',
+        select: 'subDistrictName subDistrictCode'
+      })
+      .populate({
+        path: 'village',
+        select: 'villageName villageCode'
+      });
+
+    if (!farmer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "Farmer not found"));
+    }
+
+    // 🔥 Check access control: Only admin or owner can access
+    if (userRole !== "admin" && farmer.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json(new ApiResponse(false, 403, "Access forbidden"));
+    }
+
+    res.status(200).json(
+      new ApiResponse(true, 200, "Farmer fetched successfully", farmer)
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", { error: error.message })
+    );
+  }
+};
