@@ -2,6 +2,8 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import SubDistrict from "../models/SubDistrict.js";
 import Village from "../models/village.js";
 import Farmer from "../models/Farmer.js";
+import { getQueryOptions } from "../utils/queryHelper.js";
+import mongoose from "mongoose";
 
 export const createFarmer = async (req, res) => {
   try {
@@ -106,5 +108,85 @@ export const createFarmer = async (req, res) => {
       .json(
         new ApiResponse(false, 500, "Server Error", { error: error.message })
       );
+  }
+};
+
+export const getAllFarmers = async (req, res) => {
+  try {
+    const { searchQuery, page, limit, skip } = getQueryOptions(req, [
+      "name",
+      "subDistrict.subDistrictName",
+      "subDistrict.subDistrictCode"
+    ]);
+
+    const userId = req.user.id; // ✅ Get userId from req.user
+
+    const search = req.query.search || "";
+
+    const lookupSubDistrictStage = {
+      $lookup: {
+        from: "subdistricts",
+        localField: "subDistrict",
+        foreignField: "_id",
+        as: "subDistrict"
+      }
+    };
+
+    const unwindSubDistrictStage = {
+      $unwind: {
+        path: "$subDistrict",
+        preserveNullAndEmptyArrays: true
+      }
+    };
+
+    const matchStage = {
+      $match: {
+        user: new mongoose.Types.ObjectId(userId),
+        // Match user ID
+        ...(search && {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
+            { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } }
+          ]
+        })
+      }
+    };
+
+    const pipeline = [
+      lookupSubDistrictStage,
+      unwindSubDistrictStage,
+      matchStage,
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const [farmers, totalResult] = await Promise.all([
+      Farmer.aggregate(pipeline),
+      Farmer.aggregate([
+        lookupSubDistrictStage,
+        unwindSubDistrictStage,
+        matchStage,
+        { $count: "total" }
+      ])
+    ]);
+
+    const totalItems = totalResult[0]?.total || 0;
+
+    res.status(200).json(
+      new ApiResponse(true, 200, "Farmers fetched successfully", {
+       data:farmers,
+        page,
+        perPage: limit,
+        currentCount: farmers.length,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", { error: error.message })
+    );
   }
 };
