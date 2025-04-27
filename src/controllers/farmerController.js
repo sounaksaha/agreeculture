@@ -21,7 +21,7 @@ export const createFarmer = async (req, res) => {
       totalArea8A,
       groupNo7_12,
       cultivatedArea,
-      arableLand,
+      horticulturalArea,
       irrigationSource,
       organicFarmingArea,
       education,
@@ -77,7 +77,7 @@ export const createFarmer = async (req, res) => {
       totalArea8A,
       groupNo7_12,
       cultivatedArea,
-      arableLand,
+      horticulturalArea,
       irrigationSource,
       organicFarmingArea,
       education,
@@ -133,6 +133,15 @@ export const getAllFarmers = async (req, res) => {
       }
     };
 
+    const lookupVillageStage = {
+      $lookup: {
+        from: "villages",
+        localField: "village",
+        foreignField: "_id",
+        as: "village"
+      }
+    };
+
     const unwindSubDistrictStage = {
       $unwind: {
         path: "$subDistrict",
@@ -157,6 +166,7 @@ export const getAllFarmers = async (req, res) => {
     }
 
     const pipeline = [
+      lookupVillageStage,
       lookupSubDistrictStage,
       unwindSubDistrictStage,
       { $match: baseMatch },
@@ -167,6 +177,7 @@ export const getAllFarmers = async (req, res) => {
     const [farmers, totalResult] = await Promise.all([
       Farmer.aggregate(pipeline),
       Farmer.aggregate([
+        lookupVillageStage,
         lookupSubDistrictStage,
         unwindSubDistrictStage,
         { $match: baseMatch },
@@ -225,6 +236,120 @@ export const getFarmerById = async (req, res) => {
 
     res.status(200).json(
       new ApiResponse(true, 200, "Farmer fetched successfully", farmer)
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", { error: error.message })
+    );
+  }
+};
+
+export const updateFarmerById = async (req, res) => {
+  try {
+    const { id } = req.query; // Farmer ID
+    const userId = req.user.id; // Logged-in User ID
+
+    const {
+      village,
+      subDistrict,
+      name,
+      aadharNumber,
+      birthYear,
+      mobileNo,
+      gender,
+      category,
+      diyaang,
+      accountHolderName,
+      totalArea8A,
+      groupNo7_12,
+      cultivatedArea,
+      horticulturalArea,
+      irrigationSource,
+      organicFarmingArea,
+      education,
+      numberOfCattle,
+      machinery,
+      majorCrops,
+      latitude,
+      longitude,
+      bankName,
+      branchName,
+      branchIFSC,
+      accountNumber,
+      panNumber,
+      remarks
+    } = req.body;
+
+    // Find farmer
+    const farmer = await Farmer.findById(id);
+
+    if (!farmer) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "Farmer not found"));
+    }
+
+    // 🔥 Allow update only if farmer belongs to logged-in user
+    if (farmer.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json(new ApiResponse(false, 403, "You are not allowed to update this farmer"));
+    }
+
+    // Optional: Validate new village and subDistrict if changing
+    if (village) {
+      const villageExists = await Village.findById(village);
+      if (!villageExists) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "Village not found"));
+      }
+      farmer.village = village;
+    }
+
+    if (subDistrict) {
+      const subDistrictExists = await SubDistrict.findById(subDistrict);
+      if (!subDistrictExists) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "Sub-District not found"));
+      }
+      farmer.subDistrict = subDistrict;
+    }
+
+    // Update simple fields
+    if (name) farmer.name = name;
+    if (aadharNumber) farmer.aadharNumber = aadharNumber;
+    if (birthYear) farmer.birthYear = birthYear;
+    if (mobileNo) farmer.mobileNo = mobileNo;
+    if (gender) farmer.gender = gender;
+    if (category) farmer.category = category;
+    if (diyaang) farmer.diyaang = diyaang;
+    if (accountHolderName) farmer.accountHolderName = accountHolderName;
+    if (totalArea8A) farmer.totalArea8A = totalArea8A;
+    if (groupNo7_12) farmer.groupNo7_12 = groupNo7_12;
+    if (cultivatedArea) farmer.cultivatedArea = cultivatedArea;
+    if (horticulturalArea) farmer.horticulturalArea = horticulturalArea;
+    if (irrigationSource) farmer.irrigationSource = irrigationSource;
+    if (organicFarmingArea) farmer.organicFarmingArea = organicFarmingArea;
+    if (education) farmer.education = education;
+    if (numberOfCattle) farmer.numberOfCattle = numberOfCattle;
+    if (machinery) farmer.machinery = machinery;
+    if (majorCrops) farmer.majorCrops = majorCrops;
+    if (latitude) farmer.latitude = latitude;
+    if (longitude) farmer.longitude = longitude;
+    if (bankName) farmer.bankName = bankName;
+    if (branchName) farmer.branchName = branchName;
+    if (branchIFSC) farmer.branchIFSC = branchIFSC;
+    if (accountNumber) farmer.accountNumber = accountNumber;
+    if (panNumber) farmer.panNumber = panNumber;
+    if (remarks) farmer.remarks = remarks;
+
+    await farmer.save();
+
+    res.status(200).json(
+      new ApiResponse(true, 200, "Farmer updated successfully", farmer)
     );
   } catch (error) {
     console.error(error);

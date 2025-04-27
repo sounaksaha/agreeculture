@@ -28,7 +28,7 @@ const farmerSchema = new mongoose.Schema(
     totalArea8A: { type: Number }, // Total area from 8A record
     groupNo7_12: { type: Number },
     cultivatedArea: { type: Number }, // Cultivated area (this season)
-    horizontalArea: { type: Number }, // Arable land in hectares
+    horticulturalArea: { type: Number }, // Arable land in hectares
     irrigationSource: { type: String },
     organicFarmingArea: { type: Number }, // Organic area (ha)
     education: { type: String },
