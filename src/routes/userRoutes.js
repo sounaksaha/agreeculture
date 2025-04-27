@@ -13,7 +13,7 @@ router.post(
   authorizeRoles("user"),
   createFarmer
 );
-router.get("/get-farmer",verifyToken,authorizeRoles('user'),getAllFarmers);
+router.get("/get-farmer",verifyToken,authorizeRoles('user','admin'),getAllFarmers);
 
 
 router.get("/get-village",verifyToken,authorizeRoles('user'),getVillageByUser);

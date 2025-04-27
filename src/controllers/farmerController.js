@@ -119,7 +119,8 @@ export const getAllFarmers = async (req, res) => {
       "subDistrict.subDistrictCode"
     ]);
 
-    const userId = req.user.id; // ✅ Get userId from req.user
+    const userId = req.user.id;
+    const userRole = req.user.role; // 👈 Get role from req.user
 
     const search = req.query.search || "";
 
@@ -139,24 +140,26 @@ export const getAllFarmers = async (req, res) => {
       }
     };
 
-    const matchStage = {
-      $match: {
-        user: new mongoose.Types.ObjectId(userId),
-        // Match user ID
-        ...(search && {
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
-            { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } }
-          ]
-        })
-      }
-    };
+    const baseMatch = {};
+
+    // 🔥 Logic: If user is not admin, filter by user
+    if (userRole !== "admin") {
+      baseMatch.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    // 🔥 Logic: Add search filter
+    if (search) {
+      baseMatch.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
+        { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } }
+      ];
+    }
 
     const pipeline = [
       lookupSubDistrictStage,
       unwindSubDistrictStage,
-      matchStage,
+      { $match: baseMatch },
       { $skip: skip },
       { $limit: limit }
     ];
@@ -166,7 +169,7 @@ export const getAllFarmers = async (req, res) => {
       Farmer.aggregate([
         lookupSubDistrictStage,
         unwindSubDistrictStage,
-        matchStage,
+        { $match: baseMatch },
         { $count: "total" }
       ])
     ]);
@@ -175,7 +178,7 @@ export const getAllFarmers = async (req, res) => {
 
     res.status(200).json(
       new ApiResponse(true, 200, "Farmers fetched successfully", {
-       data:farmers,
+        data: farmers,
         page,
         perPage: limit,
         currentCount: farmers.length,
