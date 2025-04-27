@@ -116,7 +116,7 @@ export const getAllFarmers = async (req, res) => {
     const { searchQuery, page, limit, skip } = getQueryOptions(req, [
       "name",
       "subDistrict.subDistrictName",
-      "subDistrict.subDistrictCode"
+      "subDistrict.subDistrictCode",
     ]);
 
     const userId = req.user.id;
@@ -129,15 +129,15 @@ export const getAllFarmers = async (req, res) => {
         from: "subdistricts",
         localField: "subDistrict",
         foreignField: "_id",
-        as: "subDistrict"
-      }
+        as: "subDistrict",
+      },
     };
 
     const unwindSubDistrictStage = {
       $unwind: {
         path: "$subDistrict",
-        preserveNullAndEmptyArrays: true
-      }
+        preserveNullAndEmptyArrays: true,
+      },
     };
 
     const baseMatch = {};
@@ -152,7 +152,7 @@ export const getAllFarmers = async (req, res) => {
       baseMatch.$or = [
         { name: { $regex: search, $options: "i" } },
         { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
-        { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } }
+        { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } },
       ];
     }
 
@@ -161,7 +161,7 @@ export const getAllFarmers = async (req, res) => {
       unwindSubDistrictStage,
       { $match: baseMatch },
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
     ];
 
     const [farmers, totalResult] = await Promise.all([
@@ -170,8 +170,8 @@ export const getAllFarmers = async (req, res) => {
         lookupSubDistrictStage,
         unwindSubDistrictStage,
         { $match: baseMatch },
-        { $count: "total" }
-      ])
+        { $count: "total" },
+      ]),
     ]);
 
     const totalItems = totalResult[0]?.total || 0;
@@ -183,14 +183,16 @@ export const getAllFarmers = async (req, res) => {
         perPage: limit,
         currentCount: farmers.length,
         totalPages: Math.ceil(totalItems / limit),
-        totalItems
+        totalItems,
       })
     );
   } catch (error) {
     console.error(error);
-    res.status(500).json(
-      new ApiResponse(false, 500, "Server Error", { error: error.message })
-    );
+    res
+      .status(500)
+      .json(
+        new ApiResponse(false, 500, "Server Error", { error: error.message })
+      );
   }
 };
 
@@ -202,12 +204,12 @@ export const getFarmerById = async (req, res) => {
 
     const farmer = await Farmer.findById(id)
       .populate({
-        path: 'subDistrict',
-        select: 'subDistrictName subDistrictCode'
+        path: "subDistrict",
+        select: "subDistrictName subDistrictCode",
       })
       .populate({
-        path: 'village',
-        select: 'villageName villageCode'
+        path: "village",
+        select: "villageName villageCode",
       });
 
     if (!farmer) {
@@ -223,13 +225,42 @@ export const getFarmerById = async (req, res) => {
         .json(new ApiResponse(false, 403, "Access forbidden"));
     }
 
-    res.status(200).json(
-      new ApiResponse(true, 200, "Farmer fetched successfully", farmer)
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(true, 200, "Farmer fetched successfully", farmer));
   } catch (error) {
     console.error(error);
-    res.status(500).json(
-      new ApiResponse(false, 500, "Server Error", { error: error.message })
-    );
+    res
+      .status(500)
+      .json(
+        new ApiResponse(false, 500, "Server Error", { error: error.message })
+      );
+  }
+};
+
+export const deleteFarmerById = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const existing = await Farmer.findById(id);
+    if (!existing) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "No Farmer Found"));
+    }
+    const deleteData = await Farmer.findByIdAndDelete(id);
+
+    if (deleteData) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(true, 200, "Deleted Farmer Successfull", deleteData)
+        );
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json(
+        new ApiResponse(false, 500, "server error", { message: err.message })
+      );
   }
 };
