@@ -35,7 +35,12 @@ app.post("/register-admin", validateRegistration, validate, registerAdmin);
 app.post("/login", login);
 app.get("/refresh-token", refresh);
 app.post("/logout", logout);
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "✅ Backend is up and running!",
+    timestamp: new Date().toISOString(),
+  });
+});
 // Protected routes
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
