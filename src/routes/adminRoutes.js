@@ -1,15 +1,21 @@
 import express from 'express';
-import { registerUser } from '../controllers/authController.js';
 import { createDistrict, deleteDistrictById, getDistrictById, getDistricts, updateDistrictById  } from '../controllers/districtController.js';
 import { verifyToken, authorizeRoles } from '../middleware/auth.js';
 import validate from '../middleware/validate.js';
 import { validateDistrict, validateRegistration, validateSubDistrict, validateVillage } from '../utils/validator.js';
 import { createSubDistrict, deleteSubDistrictById, getSubDistrictById, getSubDistricts, updateSubDistrictById } from '../controllers/subDistrictController.js';
 import { createVillage, deleteVillageById, getVillage, getVillageById, updateVillageById } from '../controllers/villageController.js';
+import { deleteUserById, getAllUsers, getUserById, registerUser, updateUserById } from '../controllers/userController.js';
 
 const router = express.Router();
 
 router.post('/register-user', verifyToken, authorizeRoles('admin'), validateRegistration,validate, registerUser);
+router.get('/getusers',verifyToken,authorizeRoles('admin'),getAllUsers)
+router.get('/getuser',verifyToken,authorizeRoles('admin'),getUserById)
+router.put('/update-user', verifyToken, authorizeRoles('admin'),validateRegistration,validate,updateUserById);
+router.delete('/delete-user',verifyToken,authorizeRoles('admin'),deleteUserById)
+
+
 
 router.post('/create-district', verifyToken, authorizeRoles('admin'),validateDistrict,validate, createDistrict);
 router.get('/districts', verifyToken, authorizeRoles('admin'), getDistricts);
