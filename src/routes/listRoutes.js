@@ -1,9 +1,10 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
-import { createEducation, deleteEducationById, getEducation, getEducationById, updateEducationById } from "../controllers/listController.js";
+import { createEducation, createIrrigation, deleteEducationById, deleteIrrigationById, getEducation, getEducationById, getIrrigation, getIrrigationById, updateEducationById, updateIrrigationById } from "../controllers/listController.js";
 
 const router = express.Router();
 
+//Education
 router.post(
   "/create-education",
   verifyToken,
@@ -39,6 +40,40 @@ router.put(
   updateEducationById
 );
 
+//Irrigation
+router.post(
+  "/create-irrigation",
+  verifyToken,
+  authorizeRoles("admin"),
+  createIrrigation
+);
 
+router.get(
+  "/get-irrigation",
+  verifyToken,
+  authorizeRoles("admin"),
+  getIrrigation
+);
+
+router.get(
+  "/get-irrigation-byid",
+  verifyToken,
+  authorizeRoles("admin"),
+  getIrrigationById
+);
+
+router.put(
+  "/update-irrigation",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateIrrigationById
+);
+
+router.delete(
+  "/delete-irrigation",
+  verifyToken,
+  authorizeRoles("admin"),
+  deleteIrrigationById
+);
 
 export default router;
