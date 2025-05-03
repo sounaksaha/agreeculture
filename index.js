@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import publicRoutes from "./src/routes/publicRoutes.js";
+import listRoutes from "./src/routes/listRoutes.js";
 import { validateRegistration } from "./src/utils/validator.js";
 import {
   login,
@@ -55,7 +56,8 @@ app.get("/", (req, res) => {
 // Protected routes
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
-app.use("/public",publicRoutes)
+app.use("/public",publicRoutes);
+app.use("/admin/list",listRoutes)
 connectDB()
   .then(() =>
     app.listen(process.env.PORT || 5000, () =>
