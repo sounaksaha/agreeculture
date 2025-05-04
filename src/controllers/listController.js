@@ -1,5 +1,6 @@
 
 import Agribusiness from "../models/List/Agribusiness.js";
+import Agriculture from "../models/List/Agriculture.js";
 import Animal from "../models/List/Animal.js";
 import Education from "../models/List/Education.js";
 import Irrigation from "../models/List/Irrigation.js";
@@ -589,3 +590,121 @@ export const getMachine = async (req, res) => {
         );
     }
   };
+
+  //Agriculture
+
+  export const createAgriculture = async(req,res)  => {
+    try {
+        const{type}= req.body;
+        const newData = new Agriculture({type:type});
+        await newData.save();
+        return res.status(201).json(new ApiResponse(true,201,"Agriculture Created Successfull",newData));
+    } catch (error) {
+        return res.status(500).json(new ApiResponse(false,500,"Server Error",{error:error.message}))
+    }
+}
+
+export const getAgriculture = async (req, res) => {
+    try {
+      const { searchQuery, skip, limit, page } = getQueryOptions(req, [
+        "type",
+      ]);
+  
+      const data = await Agriculture.find(searchQuery).skip(skip).limit(limit);
+  
+      const total = await Agriculture.countDocuments(searchQuery);
+  
+      res.status(200).json(
+        new ApiResponse(true, 200, "All Data", {
+          data: data,
+          page,
+          perPage: limit,
+          currentCount: data.length, // 👈 shows how many items were returned on this page
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+        })
+      );
+    } catch (err) {
+      res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  };
+
+  export const getAgricultureById = async (req, res) => {
+    try {
+      const { id } = req.query;
+      const existing = await Agriculture.findById(id);
+      if (!existing) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "No Agriculture Found"));
+      }
+      return res
+        .status(200)
+        .json(new ApiResponse(true, 200, "Agriculture Details", existing));
+    } catch (error) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  }; 
+
+  export const updateAgricultureById = async (req, res) => {
+    const { id } = req.query;
+    const { type } = req.body;
+  
+    try {
+      const data = await Agriculture.findById(id);
+      if (!data) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "Data not found"));
+      }
+      
+      if (type) data.type = type;
+  
+      await data.save();
+      res
+        .status(200)
+        .json(
+          new ApiResponse(true, 200, "Agriculture updated successfully", data)
+        );
+    } catch (error) {
+      res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "Server Error", { error: error.message })
+        );
+    }
+  };
+
+  export const deleteAgricultureyId = async (req, res) => {
+    try {
+      const { id } = req.query;
+      const existing = await Agriculture.findById(id);
+      if (!existing) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "No Agriculture Found"));
+      }
+      const deleteData = await Agriculture.findByIdAndDelete(id);
+  
+      if (deleteData) {
+        return res
+          .status(200)
+          .json(new ApiResponse(true, 200, "Delete Successfull", deleteData));
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  };
+  //
