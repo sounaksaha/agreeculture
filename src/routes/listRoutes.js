@@ -1,6 +1,6 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
-import { createEducation, createIrrigation, deleteEducationById, deleteIrrigationById, getEducation, getEducationById, getIrrigation, getIrrigationById, updateEducationById, updateIrrigationById } from "../controllers/listController.js";
+import { createAnimal, createEducation, createIrrigation, deleteAnimalById, deleteEducationById, deleteIrrigationById, getAnimal, getAnimalById, getEducation, getEducationById, getIrrigation, getIrrigationById, updateAnimalById, updateEducationById, updateIrrigationById } from "../controllers/listController.js";
 
 const router = express.Router();
 
@@ -76,4 +76,41 @@ router.delete(
   deleteIrrigationById
 );
 
+
+//ANIMAL
+
+router.post(
+  "/create-animal",
+  verifyToken,
+  authorizeRoles("admin"),
+  createAnimal
+);
+
+router.get(
+  "/get-animal",
+  verifyToken,
+  authorizeRoles("admin"),
+  getAnimal
+);
+
+router.get(
+  "/get-animal-byid",
+  verifyToken,
+  authorizeRoles("admin"),
+  getAnimalById
+);
+
+router.put(
+  "/update-animal",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateAnimalById
+);
+
+router.delete(
+  "/delete-animal",
+  verifyToken,
+  authorizeRoles("admin"),
+  deleteAnimalById
+);
 export default router;
