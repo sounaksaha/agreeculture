@@ -1,6 +1,6 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
-import { createAnimal, createEducation, createIrrigation, deleteAnimalById, deleteEducationById, deleteIrrigationById, getAnimal, getAnimalById, getEducation, getEducationById, getIrrigation, getIrrigationById, updateAnimalById, updateEducationById, updateIrrigationById } from "../controllers/listController.js";
+import { createAgribusiness, createAnimal, createEducation, createIrrigation, deleteAgribusinessById, deleteAnimalById, deleteEducationById, deleteIrrigationById, getAgribusiness, getAgribusinessById, getAnimal, getAnimalById, getEducation, getEducationById, getIrrigation, getIrrigationById, updateAgribusinessById, updateAnimalById, updateEducationById, updateIrrigationById } from "../controllers/listController.js";
 
 const router = express.Router();
 
@@ -113,4 +113,42 @@ router.delete(
   authorizeRoles("admin"),
   deleteAnimalById
 );
+
+//Agribusiness
+
+router.post(
+  "/create-agribusiness",
+  verifyToken,
+  authorizeRoles("admin"),
+  createAgribusiness
+);
+
+router.get(
+  "/get-agribusiness",
+  verifyToken,
+  authorizeRoles("admin"),
+  getAgribusiness
+);
+
+router.get(
+  "/get-agribusiness-byid",
+  verifyToken,
+  authorizeRoles("admin"),
+  getAgribusinessById
+);
+
+router.put(
+  "/update-agribusiness",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateAgribusinessById
+);
+
+router.delete(
+  "/delete-agribusiness",
+  verifyToken,
+  authorizeRoles("admin"),
+  deleteAgribusinessById
+);
 export default router;
+
