@@ -3,6 +3,7 @@ import Agribusiness from "../models/List/Agribusiness.js";
 import Animal from "../models/List/Animal.js";
 import Education from "../models/List/Education.js";
 import Irrigation from "../models/List/Irrigation.js";
+import Machine from "../models/List/Machine.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
 
@@ -457,6 +458,123 @@ export const getAgribusiness = async (req, res) => {
           .json(new ApiResponse(false, 404, "No Agribusiness Found"));
       }
       const deleteData = await Agribusiness.findByIdAndDelete(id);
+  
+      if (deleteData) {
+        return res
+          .status(200)
+          .json(new ApiResponse(true, 200, "Delete Successfull", deleteData));
+      }
+    } catch (error) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  };
+
+  //Machine
+
+  export const createMachine = async(req,res)  => {
+    try {
+        const{type}= req.body;
+        const newData = new Machine({type:type});
+        await newData.save();
+        return res.status(201).json(new ApiResponse(true,201,"Machine Created Successfull",newData));
+    } catch (error) {
+        return res.status(500).json(new ApiResponse(false,500,"Server Error",{error:error.message}))
+    }
+}
+
+export const getMachine = async (req, res) => {
+    try {
+      const { searchQuery, skip, limit, page } = getQueryOptions(req, [
+        "type",
+      ]);
+  
+      const data = await Machine.find(searchQuery).skip(skip).limit(limit);
+  
+      const total = await Machine.countDocuments(searchQuery);
+  
+      res.status(200).json(
+        new ApiResponse(true, 200, "All Data", {
+          data: data,
+          page,
+          perPage: limit,
+          currentCount: data.length, // 👈 shows how many items were returned on this page
+          totalPages: Math.ceil(total / limit),
+          totalItems: total,
+        })
+      );
+    } catch (err) {
+      res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  };
+
+  export const getMachineById = async (req, res) => {
+    try {
+      const { id } = req.query;
+      const existing = await Machine.findById(id);
+      if (!existing) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "No Machine Found"));
+      }
+      return res
+        .status(200)
+        .json(new ApiResponse(true, 200, "Machine Details", existing));
+    } catch (error) {
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "server error", { message: err.message })
+        );
+    }
+  }; 
+
+  export const updateMachineById = async (req, res) => {
+    const { id } = req.query;
+    const { type } = req.body;
+  
+    try {
+      const data = await Machine.findById(id);
+      if (!data) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "Data not found"));
+      }
+      
+      if (type) data.type = type;
+  
+      await data.save();
+      res
+        .status(200)
+        .json(
+          new ApiResponse(true, 200, "Machine updated successfully", data)
+        );
+    } catch (error) {
+      res
+        .status(500)
+        .json(
+          new ApiResponse(false, 500, "Server Error", { error: error.message })
+        );
+    }
+  };
+
+  export const deleteMachineById = async (req, res) => {
+    try {
+      const { id } = req.query;
+      const existing = await Machine.findById(id);
+      if (!existing) {
+        return res
+          .status(404)
+          .json(new ApiResponse(false, 404, "No Machine Found"));
+      }
+      const deleteData = await Machine.findByIdAndDelete(id);
   
       if (deleteData) {
         return res
