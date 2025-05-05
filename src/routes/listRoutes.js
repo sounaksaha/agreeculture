@@ -1,6 +1,6 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
-import { createAgribusiness, createAgriculture, createAnimal, createEducation, createIrrigation, createMachine, deleteAgribusinessById, deleteAgricultureyId, deleteAnimalById, deleteEducationById, deleteIrrigationById, deleteMachineById, getAgribusiness, getAgribusinessById, getAgriculture, getAgricultureById, getAnimal, getAnimalById, getEducation, getEducationById, getIrrigation, getIrrigationById, getMachine, getMachineById, updateAgribusinessById, updateAgricultureById, updateAnimalById, updateEducationById, updateIrrigationById, updateMachineById } from "../controllers/listController.js";
+import { createAgribusiness, createAgriculture, createAnimal, createCrops, createEducation, createIrrigation, createMachine, deleteAgribusinessById, deleteAgricultureById, deleteAnimalById, deleteCropsById, deleteEducationById, deleteIrrigationById, deleteMachineById, getAgribusiness, getAgribusinessById, getAgriculture, getAgricultureById, getAnimal, getAnimalById, getCrops, getCropsById, getEducation, getEducationById, getIrrigation, getIrrigationById, getMachine, getMachineById, updateAgribusinessById, updateAgricultureById, updateAnimalById, updateCropsById, updateEducationById, updateIrrigationById, updateMachineById } from "../controllers/listController.js";
 
 const router = express.Router();
 
@@ -223,7 +223,44 @@ router.delete(
   "/delete-agriculture",
   verifyToken,
   authorizeRoles("admin"),
-  deleteAgricultureyId
+  deleteAgricultureById
+);
+
+//Crops
+
+router.post(
+  "/create-crops",
+  verifyToken,
+  authorizeRoles("admin"),
+  createCrops
+);
+
+router.get(
+  "/get-crops",
+  verifyToken,
+  authorizeRoles("admin"),
+  getCrops
+);
+
+router.get(
+  "/get-crops-byid",
+  verifyToken,
+  authorizeRoles("admin"),
+  getCropsById
+);
+
+router.put(
+  "/update-crops",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateCropsById
+);
+
+router.delete(
+  "/delete-crops",
+  verifyToken,
+  authorizeRoles("admin"),
+  deleteCropsById
 );
 
 export default router;
