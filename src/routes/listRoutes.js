@@ -1,6 +1,42 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
-import { createAgribusiness, createAgriculture, createAnimal, createCrops, createEducation, createIrrigation, createMachine, deleteAgribusinessById, deleteAgricultureById, deleteAnimalById, deleteCropsById, deleteEducationById, deleteIrrigationById, deleteMachineById, getAgribusiness, getAgribusinessById, getAgriculture, getAgricultureById, getAnimal, getAnimalById, getCrops, getCropsById, getEducation, getEducationById, getIrrigation, getIrrigationById, getMachine, getMachineById, updateAgribusinessById, updateAgricultureById, updateAnimalById, updateCropsById, updateEducationById, updateIrrigationById, updateMachineById } from "../controllers/listController.js";
+import {
+  createAgribusiness,
+  createAgriculture,
+  createAnimal,
+  createCrops,
+  createEducation,
+  createIrrigation,
+  createMachine,
+  deleteAgribusinessById,
+  deleteAgricultureById,
+  deleteAnimalById,
+  deleteCropsById,
+  deleteEducationById,
+  deleteIrrigationById,
+  deleteMachineById,
+  getAgribusiness,
+  getAgribusinessById,
+  getAgriculture,
+  getAgricultureById,
+  getAnimal,
+  getAnimalById,
+  getCrops,
+  getCropsById,
+  getEducation,
+  getEducationById,
+  getIrrigation,
+  getIrrigationById,
+  getMachine,
+  getMachineById,
+  updateAgribusinessById,
+  updateAgricultureById,
+  updateAnimalById,
+  updateCropsById,
+  updateEducationById,
+  updateIrrigationById,
+  updateMachineById,
+} from "../controllers/listController.js";
 
 const router = express.Router();
 
@@ -15,7 +51,7 @@ router.post(
 router.get(
   "/get-education",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getEducation
 );
 
@@ -51,7 +87,7 @@ router.post(
 router.get(
   "/get-irrigation",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getIrrigation
 );
 
@@ -76,7 +112,6 @@ router.delete(
   deleteIrrigationById
 );
 
-
 //ANIMAL
 
 router.post(
@@ -89,7 +124,7 @@ router.post(
 router.get(
   "/get-animal",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getAnimal
 );
 
@@ -126,7 +161,7 @@ router.post(
 router.get(
   "/get-agribusiness",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getAgribusiness
 );
 
@@ -151,7 +186,6 @@ router.delete(
   deleteAgribusinessById
 );
 
-
 //Machine
 router.post(
   "/create-machine",
@@ -163,7 +197,7 @@ router.post(
 router.get(
   "/get-machine",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getMachine
 );
 
@@ -188,7 +222,6 @@ router.delete(
   deleteMachineById
 );
 
-
 //Agriculture
 
 router.post(
@@ -201,7 +234,7 @@ router.post(
 router.get(
   "/get-agriculture",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getAgriculture
 );
 
@@ -228,17 +261,12 @@ router.delete(
 
 //Crops
 
-router.post(
-  "/create-crops",
-  verifyToken,
-  authorizeRoles("admin"),
-  createCrops
-);
+router.post("/create-crops", verifyToken, authorizeRoles("admin"), createCrops);
 
 router.get(
   "/get-crops",
   verifyToken,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "user"),
   getCrops
 );
 
@@ -264,4 +292,3 @@ router.delete(
 );
 
 export default router;
-

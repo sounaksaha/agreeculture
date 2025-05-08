@@ -11,30 +11,40 @@ export const createFarmer = async (req, res) => {
       village,
       subDistrict,
       name,
-      aadharNumber,
-      birthYear,
-      mobileNo,
       gender,
       category,
-      diyaang,
-      accountHolderName,
-      totalArea8A,
-      groupNo7_12,
-      cultivatedArea,
-      horticulturalArea,
-      irrigationSource,
-      organicFarmingArea,
-      education,
-      numberOfCattle,
-      machinery,
-      majorCrops,
-      latitude,
-      longitude,
+      divyang,
+      aadharNumber,
+      panNumber,
+      birthYear,
+      agristackFarmerNumber,
+      mobileNo,
+      accountNumber,
       bankName,
       branchName,
       branchIFSC,
-      accountNumber,
-      panNumber,
+      education,
+      khatedarNumber8A,
+      landHolding8A,
+      groupNo7_12,
+      rainFedArea,
+      irrigatedArea,
+      irrigationSource,
+      irrigationSourceOther,
+      organicFarmingArea,
+      animals,
+
+      agriBusiness,
+      agriBusinessOther,
+      farmMachinery,
+      farmMachineryOther,
+      highTechAgriculture,
+      highTechAgricultureOther,
+
+      mainCrops,
+      mainCropsOther,
+      latitude,
+      longitude,
       remarks,
     } = req.body;
 
@@ -59,7 +69,7 @@ export const createFarmer = async (req, res) => {
     if (!subDistrictExists) {
       return res
         .status(404)
-        .json(new ApiResponse(false, 404, "Sub-District not found"));
+        .json(new ApiResponse(false, 404, "Taluka not found"));
     }
 
     const farmer = new Farmer({
@@ -67,30 +77,40 @@ export const createFarmer = async (req, res) => {
       village,
       subDistrict,
       name,
-      aadharNumber,
-      birthYear,
-      mobileNo,
       gender,
       category,
-      diyaang,
-      accountHolderName,
-      totalArea8A,
-      groupNo7_12,
-      cultivatedArea,
-      horticulturalArea,
-      irrigationSource,
-      organicFarmingArea,
-      education,
-      numberOfCattle,
-      machinery,
-      majorCrops,
-      latitude,
-      longitude,
+      divyang,
+      aadharNumber,
+      panNumber,
+      birthYear,
+      agristackFarmerNumber,
+      mobileNo,
+      accountNumber,
       bankName,
       branchName,
       branchIFSC,
-      accountNumber,
-      panNumber,
+      education,
+      khatedarNumber8A,
+      landHolding8A,
+      groupNo7_12,
+      rainFedArea,
+      irrigatedArea,
+      irrigationSource,
+      irrigationSourceOther,
+      organicFarmingArea,
+      animals,
+
+      agriBusiness,
+      agriBusinessOther,
+      farmMachinery,
+      farmMachineryOther,
+      highTechAgriculture,
+      highTechAgricultureOther,
+
+      mainCrops,
+      mainCropsOther,
+      latitude,
+      longitude,
       remarks,
     });
 
@@ -229,7 +249,26 @@ export const getFarmerById = async (req, res) => {
       .populate({
         path: "village",
         select: "villageName villageCode",
-      });
+      })
+      .populate({
+        path: "education",
+      })
+      .populate({
+        path: "irrigationSource",
+      })
+      .populate({
+        path: "animals.animal_id",
+      })
+      .populate({
+        path: "agriBusiness",
+      })
+      .populate({
+        path: "farmMachinery",
+      })
+      .populate({
+        path: "highTechAgriculture",
+      })
+      .populate("mainCrops");
 
     if (!farmer) {
       return res
@@ -285,41 +324,50 @@ export const deleteFarmerById = async (req, res) => {
 };
 export const updateFarmerById = async (req, res) => {
   try {
-    const { id } = req.query; // Farmer ID
-    const userId = req.user.id; // Logged-in User ID
+    const { id } = req.query;
+    const userId = req.user.id;
 
     const {
       village,
       subDistrict,
       name,
-      aadharNumber,
-      birthYear,
-      mobileNo,
       gender,
       category,
-      diyaang,
-      accountHolderName,
-      totalArea8A,
-      groupNo7_12,
-      cultivatedArea,
-      horticulturalArea,
-      irrigationSource,
-      organicFarmingArea,
-      education,
-      numberOfCattle,
-      machinery,
-      majorCrops,
-      latitude,
-      longitude,
+      divyang,
+      aadharNumber,
+      panNumber,
+      birthYear,
+      agristackFarmerNumber,
+      mobileNo,
+      accountNumber,
       bankName,
       branchName,
       branchIFSC,
-      accountNumber,
-      panNumber,
+      education,
+      khatedarNumber8A,
+      landHolding8A,
+      groupNo7_12,
+      rainFedArea,
+      irrigatedArea,
+      irrigationSource,
+      irrigationSourceOther,
+      organicFarmingArea,
+      animals,
+
+      agriBusiness,
+      agriBusinessOther,
+      farmMachinery,
+      farmMachineryOther,
+      highTechAgriculture,
+      highTechAgricultureOther,
+
+      mainCrops,
+      mainCropsOther,
+      latitude,
+      longitude,
       remarks,
     } = req.body;
 
-    // Find farmer
     const farmer = await Farmer.findById(id);
 
     if (!farmer) {
@@ -328,7 +376,6 @@ export const updateFarmerById = async (req, res) => {
         .json(new ApiResponse(false, 404, "Farmer not found"));
     }
 
-    // 🔥 Allow update only if farmer belongs to logged-in user
     if (farmer.user.toString() !== userId) {
       return res
         .status(403)
@@ -341,8 +388,8 @@ export const updateFarmerById = async (req, res) => {
         );
     }
 
-    // Optional: Validate new village and subDistrict if changing
-    if (village) {
+    // Validate village and subDistrict if present
+    if (req.body.hasOwnProperty("village")) {
       const villageExists = await Village.findById(village);
       if (!villageExists) {
         return res
@@ -352,7 +399,7 @@ export const updateFarmerById = async (req, res) => {
       farmer.village = village;
     }
 
-    if (subDistrict) {
+    if (req.body.hasOwnProperty("subDistrict")) {
       const subDistrictExists = await SubDistrict.findById(subDistrict);
       if (!subDistrictExists) {
         return res
@@ -362,33 +409,50 @@ export const updateFarmerById = async (req, res) => {
       farmer.subDistrict = subDistrict;
     }
 
-    // Update simple fields
-    if (name) farmer.name = name;
-    if (aadharNumber) farmer.aadharNumber = aadharNumber;
-    if (birthYear) farmer.birthYear = birthYear;
-    if (mobileNo) farmer.mobileNo = mobileNo;
-    if (gender) farmer.gender = gender;
-    if (category) farmer.category = category;
-    if (diyaang) farmer.diyaang = diyaang;
-    if (accountHolderName) farmer.accountHolderName = accountHolderName;
-    if (totalArea8A) farmer.totalArea8A = totalArea8A;
-    if (groupNo7_12) farmer.groupNo7_12 = groupNo7_12;
-    if (cultivatedArea) farmer.cultivatedArea = cultivatedArea;
-    if (horticulturalArea) farmer.horticulturalArea = horticulturalArea;
-    if (irrigationSource) farmer.irrigationSource = irrigationSource;
-    if (organicFarmingArea) farmer.organicFarmingArea = organicFarmingArea;
-    if (education) farmer.education = education;
-    if (numberOfCattle) farmer.numberOfCattle = numberOfCattle;
-    if (machinery) farmer.machinery = machinery;
-    if (majorCrops) farmer.majorCrops = majorCrops;
-    if (latitude) farmer.latitude = latitude;
-    if (longitude) farmer.longitude = longitude;
-    if (bankName) farmer.bankName = bankName;
-    if (branchName) farmer.branchName = branchName;
-    if (branchIFSC) farmer.branchIFSC = branchIFSC;
-    if (accountNumber) farmer.accountNumber = accountNumber;
-    if (panNumber) farmer.panNumber = panNumber;
-    if (remarks) farmer.remarks = remarks;
+    // List of simple fields to update
+    const fields = [
+      "name",
+      "gender",
+      "category",
+      "divyang",
+      "aadharNumber",
+      "panNumber",
+      "birthYear",
+      "agristackFarmerNumber",
+      "mobileNo",
+      "accountNumber",
+      "bankName",
+      "branchName",
+      "branchIFSC",
+      "education",
+      "khatedarNumber8A",
+      "landHolding8A",
+      "groupNo7_12",
+      "rainFedArea",
+      "irrigatedArea",
+      "irrigationSource",
+      "irrigationSourceOther",
+      "organicFarmingArea",
+      "animals",
+      "agriBusiness",
+      "agriBusinessOther",
+      "farmMachinery",
+      "farmMachineryOther",
+      "highTechAgriculture",
+      "highTechAgricultureOther",
+      "mainCrops",
+      "mainCropsOther",
+      "latitude",
+      "longitude",
+      "remarks",
+    ];
+
+    // Update fields if they are in the request body
+    fields.forEach((field) => {
+      if (req.body.hasOwnProperty(field)) {
+        farmer[field] = req.body[field];
+      }
+    });
 
     await farmer.save();
 
