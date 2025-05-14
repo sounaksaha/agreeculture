@@ -4,6 +4,7 @@ import Village from "../models/village.js";
 import Farmer from "../models/Farmer.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
 import mongoose from "mongoose";
+import User from "../models/User.js";
 
 export const createFarmer = async (req, res) => {
   try {
@@ -133,17 +134,28 @@ export const createFarmer = async (req, res) => {
 
 export const getAllFarmers = async (req, res) => {
   try {
-    const { searchQuery, page, limit, skip } = getQueryOptions(req, [
-      "name",
-      "subDistrict.subDistrictName",
-      "subDistrict.subDistrictCode",
-    ]);
+    const { page, limit, skip } = getQueryOptions(req);
 
     const userId = req.user.id;
-    const userRole = req.user.role; // 👈 Get role from req.user
+    const userRole = req.user.role;
 
-    const search = req.query.search || "";
+    let userSubDistrict = null;
 
+    // 🔍 Get user's subdistrict if role is 'user'
+    if (userRole === "user") {
+      const user = await User.findById(userId).select("subDistrict");
+      if (!user || !user.subDistrict) {
+        return res.status(400).json(
+          new ApiResponse(false, 400, "User subDistrict not set", null)
+        );
+      }
+      userSubDistrict = user.subDistrict;
+    }
+
+    // Extract query filters
+    const { villageId, subDistrictId, search } = req.query;
+
+    // Aggregation Stages
     const lookupSubDistrictStage = {
       $lookup: {
         from: "subdistricts",
@@ -176,22 +188,32 @@ export const getAllFarmers = async (req, res) => {
       },
     };
 
+    // Match stage
     const baseMatch = {};
 
-    // 🔥 Logic: If user is not admin, filter by user
-    if (userRole !== "admin") {
-      baseMatch.user = new mongoose.Types.ObjectId(userId);
+    // Apply user subdistrict restriction
+    if (userRole === "user") {
+      baseMatch["subDistrict._id"] = new mongoose.Types.ObjectId(userSubDistrict);
     }
 
-    // 🔥 Logic: Add search filter
+    // Apply filters from query params
+    if (villageId && mongoose.Types.ObjectId.isValid(villageId)) {
+      baseMatch["village._id"] = new mongoose.Types.ObjectId(villageId);
+    }
+
+    if (subDistrictId && mongoose.Types.ObjectId.isValid(subDistrictId)) {
+      baseMatch["subDistrict._id"] = new mongoose.Types.ObjectId(subDistrictId);
+    }
+
+    // Search by name or aadharNumber
     if (search) {
       baseMatch.$or = [
         { name: { $regex: search, $options: "i" } },
-        { "subDistrict.subDistrictName": { $regex: search, $options: "i" } },
-        { "subDistrict.subDistrictCode": { $regex: search, $options: "i" } },
+        { aadharNumber: { $regex: search, $options: "i" } },
       ];
     }
 
+    // Final aggregation pipeline
     const pipeline = [
       lookupVillageStage,
       lookupSubDistrictStage,
@@ -202,20 +224,23 @@ export const getAllFarmers = async (req, res) => {
       { $limit: limit },
     ];
 
+    const countPipeline = [
+      lookupVillageStage,
+      lookupSubDistrictStage,
+      unwindSubDistrictStage,
+      unwindVillageStage,
+      { $match: baseMatch },
+      { $count: "total" },
+    ];
+
     const [farmers, totalResult] = await Promise.all([
       Farmer.aggregate(pipeline),
-      Farmer.aggregate([
-        lookupVillageStage,
-        lookupSubDistrictStage,
-        unwindSubDistrictStage,
-        { $match: baseMatch },
-        { $count: "total" },
-      ]),
+      Farmer.aggregate(countPipeline),
     ]);
 
     const totalItems = totalResult[0]?.total || 0;
 
-    res.status(200).json(
+    return res.status(200).json(
       new ApiResponse(true, 200, "Farmers fetched successfully", {
         data: farmers,
         page,
@@ -227,11 +252,11 @@ export const getAllFarmers = async (req, res) => {
     );
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json(
-        new ApiResponse(false, 500, "Server Error", { error: error.message })
-      );
+    return res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", {
+        error: error.message,
+      })
+    );
   }
 };
 
