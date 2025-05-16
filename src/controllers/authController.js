@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import TokenBlacklist from "../models/TokenBlacklist.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import SubDistrict from "../models/SubDistrict.js";
 
 const generateToken = (payload, expiresIn = "1h") =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
@@ -12,8 +13,10 @@ const sendTokens = (res, user) => {
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
+    // secure: true,
+    // sameSite: "Strict",
+    secure: process.env.NODE_ENV === "production", // true only in production (HTTPS)
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", 
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -34,16 +37,7 @@ export const registerAdmin = async (req, res) => {
   }
 };
 
-export const registerUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = new User({ email, password, role: "user" });
-    await user.save();
-    res.status(201).json(new ApiResponse(true, 200, "User Registered", user));
-  } catch (error) {
-    res.status(400).json(new ApiResponse(false,400,"Server Error",{ error: error.message }));
-  }
-};
+
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
