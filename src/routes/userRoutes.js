@@ -7,6 +7,7 @@ import {
   updateFarmerById,
 } from "../controllers/farmerController.js";
 import { getVillageByUser } from "../controllers/userController.js";
+import { createFarmerGroup, deleteFarmerGroup, getFarmerGroupById } from "../controllers/farmerGroupController.js";
 
 const router = express.Router();
 router.get("/districts", verifyToken, authorizeRoles("user"), getDistricts);
@@ -37,5 +38,26 @@ router.get(
   authorizeRoles("user"),
   getVillageByUser
 );
+
+router.post(
+  "/create-group",
+  verifyToken,
+  authorizeRoles("user"),
+  createFarmerGroup
+);
+router.get(
+  "/get-groupbyid",
+  verifyToken,
+  authorizeRoles("user"),
+ getFarmerGroupById
+);
+
+router.delete(
+  "/delete-group",
+  verifyToken,
+  authorizeRoles("user"),
+ deleteFarmerGroup
+);
+
 
 export default router;
