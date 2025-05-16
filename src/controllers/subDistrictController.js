@@ -45,8 +45,6 @@ export const createSubDistrict = async (req, res) => {
   }
 };
 
-
-
 export const getSubDistricts = async (req, res) => {
   try {
     const { searchQuery, skip, limit, page } = getQueryOptions(req, "subDistrictName");
