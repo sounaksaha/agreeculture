@@ -39,25 +39,25 @@ router.get(
   getVillageByUser
 );
 
-router.post(
-  "/create-group",
-  verifyToken,
-  authorizeRoles("user"),
-  createFarmerGroup
-);
-router.get(
-  "/get-groupbyid",
-  verifyToken,
-  authorizeRoles("user"),
- getFarmerGroupById
-);
+// router.post(
+//   "/create-group",
+//   verifyToken,
+//   authorizeRoles("user"),
+//   createFarmerGroup
+// );
+// router.get(
+//   "/get-groupbyid",
+//   verifyToken,
+//   authorizeRoles("user"),
+//  getFarmerGroupById
+// );
 
-router.delete(
-  "/delete-group",
-  verifyToken,
-  authorizeRoles("user"),
- deleteFarmerGroup
-);
+// router.delete(
+//   "/delete-group",
+//   verifyToken,
+//   authorizeRoles("user"),
+//  deleteFarmerGroup
+// );
 
 
 export default router;
