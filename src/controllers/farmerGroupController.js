@@ -65,12 +65,10 @@ export const createFarmerGroup = async (req, res) => {
       !presidentExists ||
       !secretaryExists
     ) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Invalid references (village, subDistrict, president, or secretary).",
-        });
+      return res.status(400).json({
+        message:
+          "Invalid references (village, subDistrict, president, or secretary).",
+      });
     }
 
     // Validate memberList
@@ -139,7 +137,7 @@ export const getAllFarmerGroups = async (req, res) => {
       userSubDistrict = user.subDistrict;
     }
 
-    const { villageId, subDistrictId, search } = req.query;
+    const { villageId, subDistrictId, search, status } = req.query;
 
     // Match filters
     const matchStage = {};
@@ -158,6 +156,10 @@ export const getAllFarmerGroups = async (req, res) => {
 
     if (userRole === "user") {
       matchStage.subDistrict = new mongoose.Types.ObjectId(userSubDistrict);
+    }
+
+    if (status && ["pending", "approved", "declined"].includes(status)) {
+      matchStage.status = status;
     }
 
     const totalItems = await FarmerGroup.countDocuments(matchStage);
@@ -218,7 +220,6 @@ export const getFarmerGroupById = async (req, res) => {
   }
 };
 
-
 export const updateFarmerGroupById = async (req, res) => {
   try {
     const { id } = req.query;
@@ -239,6 +240,7 @@ export const updateFarmerGroupById = async (req, res) => {
       president,
       secretary,
       memberList,
+      status,
       remarks,
     } = req.body;
 
@@ -267,6 +269,7 @@ export const updateFarmerGroupById = async (req, res) => {
     group.secretary = secretary ?? group.secretary;
     group.memberList = memberList ?? group.memberList;
     group.remarks = remarks ?? group.remarks;
+    group.status = status ?? group.status;
 
     const updatedGroup = await group.save();
 
@@ -281,7 +284,12 @@ export const updateFarmerGroupById = async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(true, 200, "Farmer group updated successfully", populated)
+        new ApiResponse(
+          true,
+          200,
+          "Farmer group updated successfully",
+          populated
+        )
       );
   } catch (error) {
     console.error("Error updating farmer group:", error);
@@ -318,5 +326,48 @@ export const deleteFarmerGroup = async (req, res) => {
   } catch (error) {
     console.error("Error deleting farmer group:", error);
     res.status(500).json(new ApiResponse(false, 500, "Internal server error."));
+  }
+};
+
+export const changeFarmerGroupStatus = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const { status, remarks } = req.body;
+
+    // Validate input
+    const validStatuses = ["pending", "approved", "declined"];
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(false, 400, "Invalid status value."));
+    }
+
+    const group = await FarmerGroup.findById(id);
+    if (!group) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "Farmer group not found."));
+    }
+
+    group.status = status;
+    if (remarks) group.remarks = remarks;
+
+    const updated = await group.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          true,
+          200,
+          `Status updated to ${status} successfully.`,
+          updated
+        )
+      );
+  } catch (error) {
+    console.error("Error updating farmer group status:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(false, 500, "Server Error", error.message));
   }
 };

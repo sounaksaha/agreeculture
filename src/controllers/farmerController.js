@@ -5,6 +5,7 @@ import Farmer from "../models/Farmer.js";
 import { getQueryOptions } from "../utils/queryHelper.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import FarmerGroup from "../models/FarmerGroup.js";
 
 export const createFarmer = async (req, res) => {
   try {
@@ -145,9 +146,9 @@ export const getAllFarmers = async (req, res) => {
     if (userRole === "user") {
       const user = await User.findById(userId).select("subDistrict");
       if (!user || !user.subDistrict) {
-        return res.status(400).json(
-          new ApiResponse(false, 400, "User subDistrict not set", null)
-        );
+        return res
+          .status(400)
+          .json(new ApiResponse(false, 400, "User subDistrict not set", null));
       }
       userSubDistrict = user.subDistrict;
     }
@@ -193,7 +194,9 @@ export const getAllFarmers = async (req, res) => {
 
     // Apply user subdistrict restriction
     if (userRole === "user") {
-      baseMatch["subDistrict._id"] = new mongoose.Types.ObjectId(userSubDistrict);
+      baseMatch["subDistrict._id"] = new mongoose.Types.ObjectId(
+        userSubDistrict
+      );
     }
 
     // Apply filters from query params
@@ -491,5 +494,113 @@ export const updateFarmerById = async (req, res) => {
       .json(
         new ApiResponse(false, 500, "Server Error", { error: error.message })
       );
+  }
+};
+
+export const getAvailableFarmersForGroup = async (req, res) => {
+  try {
+    const { groupId } = req.query; // Optional: for edit form
+    const { page, limit, skip } = getQueryOptions(req);
+
+    // 1️⃣ Get all farmer IDs used in other groups
+    const allGroups = await FarmerGroup.find(
+      groupId ? { _id: { $ne: groupId } } : {} // exclude current group in edit
+    ).select("president secretary memberList");
+
+    const usedFarmerIds = new Set();
+
+    allGroups.forEach((group) => {
+      if (group.president) usedFarmerIds.add(group.president.toString());
+      if (group.secretary) usedFarmerIds.add(group.secretary.toString());
+      group.memberList?.forEach((id) => usedFarmerIds.add(id.toString()));
+    });
+
+    // 2️⃣ If editing, allow farmers in the current group
+    const includeFarmerIds = new Set();
+    if (groupId) {
+      const currentGroup = await FarmerGroup.findById(groupId).select(
+        "president secretary memberList"
+      );
+      if (currentGroup) {
+        if (currentGroup.president)
+          includeFarmerIds.add(currentGroup.president.toString());
+        if (currentGroup.secretary)
+          includeFarmerIds.add(currentGroup.secretary.toString());
+        currentGroup.memberList?.forEach((id) =>
+          includeFarmerIds.add(id.toString())
+        );
+      }
+    }
+
+    // 3️⃣ Build exclusion filter
+    const exclusionFilter = {
+      _id: {
+        $nin: Array.from(usedFarmerIds).filter(
+          (id) => !includeFarmerIds.has(id)
+        ),
+      },
+    };
+
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let userSubDistrict = null;
+
+    // 🔍 Get user's subdistrict if role is 'user'
+    if (userRole === "user") {
+      const user = await User.findById(userId).select("subDistrict");
+      if (!user || !user.subDistrict) {
+        return res
+          .status(400)
+          .json(new ApiResponse(false, 400, "User subDistrict not set", null));
+      }
+      userSubDistrict = user.subDistrict;
+    }
+
+    // Optional: add more filters (search, location)
+    const { villageId, search } = req.query;
+
+    if (userSubDistrict && mongoose.Types.ObjectId.isValid(userSubDistrict)) {
+      exclusionFilter["subDistrict"] = new mongoose.Types.ObjectId(
+        userSubDistrict
+      );
+    }
+
+    if (villageId && mongoose.Types.ObjectId.isValid(villageId)) {
+      exclusionFilter["village"] = new mongoose.Types.ObjectId(villageId);
+    }
+
+    if (search) {
+      exclusionFilter["$or"] = [
+        { name: { $regex: search, $options: "i" } },
+        { aadharNumber: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // 4️⃣ Fetch filtered farmers
+    const farmers = await Farmer.find(exclusionFilter)
+      .skip(skip)
+      .limit(limit)
+      .populate("village subDistrict");
+
+    const totalItems = await Farmer.countDocuments(exclusionFilter);
+
+    return res.status(200).json(
+      new ApiResponse(true, 200, "Available farmers fetched successfully", {
+        data: farmers,
+        page,
+        perPage: limit,
+        currentCount: farmers.length,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(
+      new ApiResponse(false, 500, "Server Error", {
+        error: error.message,
+      })
+    );
   }
 };

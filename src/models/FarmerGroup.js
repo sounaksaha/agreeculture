@@ -68,6 +68,11 @@ const farmerGroupSchema = new mongoose.Schema(
         required: true,
       },
     ],
+    status: {
+      type: String,
+      enum: ["pending", "approved", "declined"],
+      default: "pending",
+    },
     remarks: {
       type: String,
     },
