@@ -21,7 +21,7 @@ const farmerSchema = new mongoose.Schema(
     birthYear: { type: Number },
     agristackFarmerNumber: { type: String },
     mobileNo: { type: String },
-    accountNumber: { type: String },
+    accountNumber: { type: String,unique: true },
     accountHolderName: { type: String },
     bankName: { type: String },
     branchName: { type: String },

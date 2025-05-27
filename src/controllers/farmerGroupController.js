@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 /**
  * Create a new FarmerGroup
  */
+
 export const createFarmerGroup = async (req, res) => {
   try {
     const {
@@ -17,8 +18,24 @@ export const createFarmerGroup = async (req, res) => {
       subDistrict,
       groupName,
       address,
+      phoneNumber,
       registrationNo,
       registrationYear,
+      groupMeetingDate,
+      groupNameResolutionPassed,
+      groupPurposeResolutionPassed,
+      groupPresidentSecretaryResolutionPassed,
+      groupBankAccountResolutionPassed,
+      groupMonthlySubscriptionResolutionPassed,
+      groupCertificateAgricultureAssistantPresent,
+      groupNameAgricultureAssistantPresent,
+      recommendationLetterNumber,
+      recommendationLetterDate,
+      recommendationTalukaAgricultureOfficerName,
+      registrationFeesPaidDetails,
+      registrationFeesPaidDetailsOther,
+      registrationFeesPaidRupees,
+      registrationFeesPaidDate,
       bankName,
       branch,
       ifsc,
@@ -32,60 +49,88 @@ export const createFarmerGroup = async (req, res) => {
       remarks,
     } = req.body;
 
-    // Basic validation
-    if (
-      !village ||
-      !subDistrict ||
-      !groupName ||
-      !address ||
-      !bankName ||
-      !branch ||
-      !ifsc ||
-      !email ||
-      !president ||
-      !secretary ||
-      !memberList ||
-      !Array.isArray(memberList)
-    ) {
+    // Basic required validation
+    const requiredFields = [
+      village,
+      subDistrict,
+      groupName,
+      address,
+      phoneNumber,
+      groupMeetingDate,
+      groupNameResolutionPassed,
+      groupPurposeResolutionPassed,
+      groupPresidentSecretaryResolutionPassed,
+      groupBankAccountResolutionPassed,
+      groupMonthlySubscriptionResolutionPassed,
+      groupCertificateAgricultureAssistantPresent,
+      groupNameAgricultureAssistantPresent,
+      recommendationLetterNumber,
+      recommendationLetterDate,
+      recommendationTalukaAgricultureOfficerName,
+      registrationFeesPaidDetails,
+      registrationFeesPaidDetailsOther,
+      registrationFeesPaidRupees,
+      registrationFeesPaidDate,
+      bankName,
+      branch,
+      ifsc,
+      email,
+      president,
+      secretary,
+    ];
+
+    if (requiredFields.some(field => field === undefined || field === null || field === '')) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Validate referenced IDs (optional but good practice)
-    const [villageExists, subDistrictExists, presidentExists, secretaryExists] =
-      await Promise.all([
-        Village.findById(village),
-        SubDistrict.findById(subDistrict),
-        Farmer.findById(president),
-        Farmer.findById(secretary),
-      ]);
+    if (!memberList || !Array.isArray(memberList)) {
+      return res.status(400).json({ message: "memberList must be a valid array." });
+    }
 
-    if (
-      !villageExists ||
-      !subDistrictExists ||
-      !presidentExists ||
-      !secretaryExists
-    ) {
+    // Validate references
+    const [villageExists, subDistrictExists, presidentExists, secretaryExists] = await Promise.all([
+      Village.findById(village),
+      SubDistrict.findById(subDistrict),
+      Farmer.findById(president),
+      Farmer.findById(secretary),
+    ]);
+
+    if (!villageExists || !subDistrictExists || !presidentExists || !secretaryExists) {
       return res.status(400).json({
-        message:
-          "Invalid references (village, subDistrict, president, or secretary).",
+        message: "Invalid references (village, subDistrict, president, or secretary).",
       });
     }
 
-    // Validate memberList
+    // Validate memberList IDs
     const validMembers = await Farmer.find({ _id: { $in: memberList } });
     if (validMembers.length !== memberList.length) {
-      return res
-        .status(400)
-        .json({ message: "One or more member IDs are invalid." });
+      return res.status(400).json({ message: "One or more member IDs are invalid." });
     }
 
+    // Create and save the group
     const newGroup = new FarmerGroup({
       village,
       subDistrict,
       groupName,
       address,
+      phoneNumber,
       registrationNo,
       registrationYear,
+      groupMeetingDate,
+      groupNameResolutionPassed,
+      groupPurposeResolutionPassed,
+      groupPresidentSecretaryResolutionPassed,
+      groupBankAccountResolutionPassed,
+      groupMonthlySubscriptionResolutionPassed,
+      groupCertificateAgricultureAssistantPresent,
+      groupNameAgricultureAssistantPresent,
+      recommendationLetterNumber,
+      recommendationLetterDate,
+      recommendationTalukaAgricultureOfficerName,
+      registrationFeesPaidDetails,
+      registrationFeesPaidDetailsOther,
+      registrationFeesPaidRupees,
+      registrationFeesPaidDate,
       bankName,
       branch,
       ifsc,
@@ -96,20 +141,15 @@ export const createFarmerGroup = async (req, res) => {
       president,
       secretary,
       memberList,
+      status,
       remarks,
     });
 
     const savedGroup = await newGroup.save();
-    return res
-      .status(201)
-      .json(
-        new ApiResponse(
-          true,
-          201,
-          "Farmer group created successfully.",
-          savedGroup
-        )
-      );
+
+    return res.status(201).json(
+      new ApiResponse(true, 201, "Farmer group created successfully.", savedGroup)
+    );
   } catch (error) {
     console.error("Error creating farmer group:", error);
     return res
@@ -117,6 +157,7 @@ export const createFarmerGroup = async (req, res) => {
       .json(new ApiResponse(false, 500, "Server Error.", error.message));
   }
 };
+
 
 export const getAllFarmerGroups = async (req, res) => {
   try {
@@ -228,8 +269,24 @@ export const updateFarmerGroupById = async (req, res) => {
       subDistrict,
       groupName,
       address,
+      phoneNumber,
       registrationNo,
       registrationYear,
+      groupMeetingDate,
+      groupNameResolutionPassed,
+      groupPurposeResolutionPassed,
+      groupPresidentSecretaryResolutionPassed,
+      groupBankAccountResolutionPassed,
+      groupMonthlySubscriptionResolutionPassed,
+      groupCertificateAgricultureAssistantPresent,
+      groupNameAgricultureAssistantPresent,
+      recommendationLetterNumber,
+      recommendationLetterDate,
+      recommendationTalukaAgricultureOfficerName,
+      registrationFeesPaidDetails,
+      registrationFeesPaidDetailsOther,
+      registrationFeesPaidRupees,
+      registrationFeesPaidDate,
       bankName,
       branch,
       ifsc,
@@ -251,13 +308,29 @@ export const updateFarmerGroupById = async (req, res) => {
         .json(new ApiResponse(false, 404, "Farmer group not found", null));
     }
 
-    // Update all fields
+       // Update all fields with null coalescing fallback
     group.village = village ?? group.village;
     group.subDistrict = subDistrict ?? group.subDistrict;
     group.groupName = groupName ?? group.groupName;
     group.address = address ?? group.address;
+    group.phoneNumber = phoneNumber ?? group.phoneNumber;
     group.registrationNo = registrationNo ?? group.registrationNo;
     group.registrationYear = registrationYear ?? group.registrationYear;
+    group.groupMeetingDate = groupMeetingDate ?? group.groupMeetingDate;
+    group.groupNameResolutionPassed = groupNameResolutionPassed ?? group.groupNameResolutionPassed;
+    group.groupPurposeResolutionPassed = groupPurposeResolutionPassed ?? group.groupPurposeResolutionPassed;
+    group.groupPresidentSecretaryResolutionPassed = groupPresidentSecretaryResolutionPassed ?? group.groupPresidentSecretaryResolutionPassed;
+    group.groupBankAccountResolutionPassed = groupBankAccountResolutionPassed ?? group.groupBankAccountResolutionPassed;
+    group.groupMonthlySubscriptionResolutionPassed = groupMonthlySubscriptionResolutionPassed ?? group.groupMonthlySubscriptionResolutionPassed;
+    group.groupCertificateAgricultureAssistantPresent = groupCertificateAgricultureAssistantPresent ?? group.groupCertificateAgricultureAssistantPresent;
+    group.groupNameAgricultureAssistantPresent = groupNameAgricultureAssistantPresent ?? group.groupNameAgricultureAssistantPresent;
+    group.recommendationLetterNumber = recommendationLetterNumber ?? group.recommendationLetterNumber;
+    group.recommendationLetterDate = recommendationLetterDate ?? group.recommendationLetterDate;
+    group.recommendationTalukaAgricultureOfficerName = recommendationTalukaAgricultureOfficerName ?? group.recommendationTalukaAgricultureOfficerName;
+    group.registrationFeesPaidDetails = registrationFeesPaidDetails ?? group.registrationFeesPaidDetails;
+    group.registrationFeesPaidDetailsOther = registrationFeesPaidDetailsOther ?? group.registrationFeesPaidDetailsOther;
+    group.registrationFeesPaidRupees = registrationFeesPaidRupees ?? group.registrationFeesPaidRupees;
+    group.registrationFeesPaidDate = registrationFeesPaidDate ?? group.registrationFeesPaidDate;
     group.bankName = bankName ?? group.bankName;
     group.branch = branch ?? group.branch;
     group.ifsc = ifsc ?? group.ifsc;
@@ -334,7 +407,6 @@ export const changeFarmerGroupStatus = async (req, res) => {
     const { id } = req.query;
     const { status, remarks } = req.body;
 
-    // Validate input
     const validStatuses = ["pending", "approved", "declined"];
     if (!validStatuses.includes(status)) {
       return res
@@ -349,21 +421,35 @@ export const changeFarmerGroupStatus = async (req, res) => {
         .json(new ApiResponse(false, 404, "Farmer group not found."));
     }
 
+    // If status is being approved
+    if (status === "approved") {
+      // Generate registration number
+      const lastRegisteredGroup = await FarmerGroup
+        .findOne({ registrationNo: { $ne: null } })
+        .sort({ registrationNo: -1 });
+
+      let nextRegNo = 1001; // default starting number
+      if (lastRegisteredGroup && !isNaN(parseInt(lastRegisteredGroup.registrationNo))) {
+        nextRegNo = parseInt(lastRegisteredGroup.registrationNo) + 1;
+      }
+
+      group.registrationNo = String(nextRegNo); // Ensure it's a string
+      group.registrationYear = new Date().getFullYear();
+    }
+
     group.status = status;
     if (remarks) group.remarks = remarks;
 
     const updated = await group.save();
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          true,
-          200,
-          `Status updated to ${status} successfully.`,
-          updated
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(
+        true,
+        200,
+        `Status updated to ${status} successfully.`,
+        updated
+      )
+    );
   } catch (error) {
     console.error("Error updating farmer group status:", error);
     return res
@@ -371,3 +457,4 @@ export const changeFarmerGroupStatus = async (req, res) => {
       .json(new ApiResponse(false, 500, "Server Error", error.message));
   }
 };
+

@@ -74,6 +74,14 @@ export const createFarmer = async (req, res) => {
         .json(new ApiResponse(false, 404, "Taluka not found"));
     }
 
+    // Check if aadharNumber already exists
+    const existingFarmer = await Farmer.findOne({ aadharNumber });
+    if (existingFarmer) {
+      return res.status(400).json(
+        new ApiResponse(false, 400, "Aadhar number already exists.")
+      );
+    }
+
     const farmer = new Farmer({
       user: userId,
       village,
@@ -435,6 +443,19 @@ export const updateFarmerById = async (req, res) => {
           .json(new ApiResponse(false, 404, "Sub-District not found"));
       }
       farmer.subDistrict = subDistrict;
+    }
+
+    // Check if aadharNumber is being updated and it's different from existing
+    if (
+      req.body.hasOwnProperty("aadharNumber") &&
+      req.body.aadharNumber !== farmer.aadharNumber
+    ) {
+      const existingAadhar = await Farmer.findOne({ aadharNumber: req.body.aadharNumber });
+      if (existingAadhar && existingAadhar._id.toString() !== farmer._id.toString()) {
+        return res.status(400).json(
+          new ApiResponse(false, 400, "Aadhar number already exists.")
+        );
+      }
     }
 
     // List of simple fields to update
