@@ -39,17 +39,19 @@ export const createFarmerGroup = async (req, res) => {
       bankName,
       branch,
       ifsc,
-      accountNo,
-      panNo,
-      gstNo,
       email,
       president,
       secretary,
       memberList,
+      accountNo,
+      panNo,
+      gstNo,
       remarks,
+      status, // optional, will default to "pending"
+      documents = [], // new document array (optional)
     } = req.body;
 
-    // Basic required validation
+    // 🚨 Required field check
     const requiredFields = [
       village,
       subDistrict,
@@ -68,7 +70,6 @@ export const createFarmerGroup = async (req, res) => {
       recommendationLetterDate,
       recommendationTalukaAgricultureOfficerName,
       registrationFeesPaidDetails,
-      registrationFeesPaidDetailsOther,
       registrationFeesPaidRupees,
       registrationFeesPaidDate,
       bankName,
@@ -76,18 +77,21 @@ export const createFarmerGroup = async (req, res) => {
       ifsc,
       email,
       president,
-      secretary,
+      secretary
     ];
 
-    if (requiredFields.some(field => field === undefined || field === null || field === '')) {
-      return res.status(400).json({ message: "Missing required fields." });
+    const missingField = requiredFields.find(
+      (field) => field === undefined || field === null || field === ""
+    );
+    if (missingField) {
+      return res.status(400).json({ message: `Missing required field.` });
     }
 
-    if (!memberList || !Array.isArray(memberList)) {
-      return res.status(400).json({ message: "memberList must be a valid array." });
+    if (!Array.isArray(memberList) || memberList.length === 0) {
+      return res.status(400).json({ message: "memberList must be a valid non-empty array." });
     }
 
-    // Validate references
+    // 🔍 Validate foreign references
     const [villageExists, subDistrictExists, presidentExists, secretaryExists] = await Promise.all([
       Village.findById(village),
       SubDistrict.findById(subDistrict),
@@ -101,13 +105,12 @@ export const createFarmerGroup = async (req, res) => {
       });
     }
 
-    // Validate memberList IDs
     const validMembers = await Farmer.find({ _id: { $in: memberList } });
     if (validMembers.length !== memberList.length) {
       return res.status(400).json({ message: "One or more member IDs are invalid." });
     }
 
-    // Create and save the group
+    // ✅ Create the group
     const newGroup = new FarmerGroup({
       village,
       subDistrict,
@@ -134,15 +137,16 @@ export const createFarmerGroup = async (req, res) => {
       bankName,
       branch,
       ifsc,
-      accountNo,
-      panNo,
-      gstNo,
       email,
       president,
       secretary,
       memberList,
-      status,
+      accountNo,
+      panNo,
+      gstNo,
       remarks,
+      documents,
+      status: status || "pending"
     });
 
     const savedGroup = await newGroup.save();
@@ -151,12 +155,13 @@ export const createFarmerGroup = async (req, res) => {
       new ApiResponse(true, 201, "Farmer group created successfully.", savedGroup)
     );
   } catch (error) {
-    console.error("Error creating farmer group:", error);
+    console.error("❌ Error creating farmer group:", error);
     return res
       .status(500)
-      .json(new ApiResponse(false, 500, "Server Error.", error.message));
+      .json(new ApiResponse(false, 500, "Server Error.", { error: error.message }));
   }
 };
+
 
 
 export const getAllFarmerGroups = async (req, res) => {
@@ -264,6 +269,7 @@ export const getFarmerGroupById = async (req, res) => {
 export const updateFarmerGroupById = async (req, res) => {
   try {
     const { id } = req.query;
+
     const {
       village,
       subDistrict,
@@ -299,6 +305,7 @@ export const updateFarmerGroupById = async (req, res) => {
       memberList,
       status,
       remarks,
+      documents
     } = req.body;
 
     const group = await FarmerGroup.findById(id);
@@ -308,45 +315,69 @@ export const updateFarmerGroupById = async (req, res) => {
         .json(new ApiResponse(false, 404, "Farmer group not found", null));
     }
 
-       // Update all fields with null coalescing fallback
-    group.village = village ?? group.village;
-    group.subDistrict = subDistrict ?? group.subDistrict;
-    group.groupName = groupName ?? group.groupName;
-    group.address = address ?? group.address;
-    group.phoneNumber = phoneNumber ?? group.phoneNumber;
-    group.registrationNo = registrationNo ?? group.registrationNo;
-    group.registrationYear = registrationYear ?? group.registrationYear;
-    group.groupMeetingDate = groupMeetingDate ?? group.groupMeetingDate;
-    group.groupNameResolutionPassed = groupNameResolutionPassed ?? group.groupNameResolutionPassed;
-    group.groupPurposeResolutionPassed = groupPurposeResolutionPassed ?? group.groupPurposeResolutionPassed;
-    group.groupPresidentSecretaryResolutionPassed = groupPresidentSecretaryResolutionPassed ?? group.groupPresidentSecretaryResolutionPassed;
-    group.groupBankAccountResolutionPassed = groupBankAccountResolutionPassed ?? group.groupBankAccountResolutionPassed;
-    group.groupMonthlySubscriptionResolutionPassed = groupMonthlySubscriptionResolutionPassed ?? group.groupMonthlySubscriptionResolutionPassed;
-    group.groupCertificateAgricultureAssistantPresent = groupCertificateAgricultureAssistantPresent ?? group.groupCertificateAgricultureAssistantPresent;
-    group.groupNameAgricultureAssistantPresent = groupNameAgricultureAssistantPresent ?? group.groupNameAgricultureAssistantPresent;
-    group.recommendationLetterNumber = recommendationLetterNumber ?? group.recommendationLetterNumber;
-    group.recommendationLetterDate = recommendationLetterDate ?? group.recommendationLetterDate;
-    group.recommendationTalukaAgricultureOfficerName = recommendationTalukaAgricultureOfficerName ?? group.recommendationTalukaAgricultureOfficerName;
-    group.registrationFeesPaidDetails = registrationFeesPaidDetails ?? group.registrationFeesPaidDetails;
-    group.registrationFeesPaidDetailsOther = registrationFeesPaidDetailsOther ?? group.registrationFeesPaidDetailsOther;
-    group.registrationFeesPaidRupees = registrationFeesPaidRupees ?? group.registrationFeesPaidRupees;
-    group.registrationFeesPaidDate = registrationFeesPaidDate ?? group.registrationFeesPaidDate;
-    group.bankName = bankName ?? group.bankName;
-    group.branch = branch ?? group.branch;
-    group.ifsc = ifsc ?? group.ifsc;
-    group.accountNo = accountNo ?? group.accountNo;
-    group.panNo = panNo ?? group.panNo;
-    group.gstNo = gstNo ?? group.gstNo;
-    group.email = email ?? group.email;
-    group.president = president ?? group.president;
-    group.secretary = secretary ?? group.secretary;
-    group.memberList = memberList ?? group.memberList;
-    group.remarks = remarks ?? group.remarks;
-    group.status = status ?? group.status;
+    // ✅ Update simple fields
+    const fields = {
+      village,
+      subDistrict,
+      groupName,
+      address,
+      phoneNumber,
+      registrationNo,
+      registrationYear,
+      groupMeetingDate,
+      groupNameResolutionPassed,
+      groupPurposeResolutionPassed,
+      groupPresidentSecretaryResolutionPassed,
+      groupBankAccountResolutionPassed,
+      groupMonthlySubscriptionResolutionPassed,
+      groupCertificateAgricultureAssistantPresent,
+      groupNameAgricultureAssistantPresent,
+      recommendationLetterNumber,
+      recommendationLetterDate,
+      recommendationTalukaAgricultureOfficerName,
+      registrationFeesPaidDetails,
+      registrationFeesPaidDetailsOther,
+      registrationFeesPaidRupees,
+      registrationFeesPaidDate,
+      bankName,
+      branch,
+      ifsc,
+      accountNo,
+      panNo,
+      gstNo,
+      email,
+      president,
+      secretary,
+      memberList,
+      status,
+      remarks
+    };
+
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value !== undefined) {
+        group[key] = value;
+      }
+    });
+
+    // ✅ Merge documents (avoid re-adding same name)
+    if (Array.isArray(documents)) {
+      const docMap = new Map();
+      group.documents.forEach(doc => docMap.set(doc.name, doc));
+
+      documents.forEach(newDoc => {
+        if (docMap.has(newDoc.name)) {
+          docMap.get(newDoc.name).fileUrl = newDoc.fileUrl;
+        } else {
+          group.documents.push({
+            name: newDoc.name,
+            fileUrl: newDoc.fileUrl
+          });
+        }
+      });
+    }
 
     const updatedGroup = await group.save();
 
-    // Populate the updated fields
     const populated = await FarmerGroup.findById(updatedGroup._id)
       .populate("village")
       .populate("subDistrict")
@@ -373,6 +404,7 @@ export const updateFarmerGroupById = async (req, res) => {
       );
   }
 };
+
 
 export const deleteFarmerGroup = async (req, res) => {
   try {

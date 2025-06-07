@@ -21,8 +21,8 @@ const farmerGroupSchema = new mongoose.Schema(
       required: true,
     },
     phoneNumber: {
-      type:String, 
-      required: true
+      type: String,
+      required: true,
     },
     registrationNo: {
       type: String,
@@ -30,7 +30,7 @@ const farmerGroupSchema = new mongoose.Schema(
     registrationYear: {
       type: Number,
     },
- groupMeetingDate: {
+    groupMeetingDate: {
       type: String,
       required: true,
     },
@@ -140,8 +140,18 @@ const farmerGroupSchema = new mongoose.Schema(
     gstNo: {
       type: String,
     },
-    
+    documents: [
+      {
+        name: String, // e.g. "BankProof", "ResolutionLetter"
+        fileUrl: String, // e.g. "https://atmacsn.org/assets/myfile.pdf"
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
+
   { timestamps: true }
 );
 

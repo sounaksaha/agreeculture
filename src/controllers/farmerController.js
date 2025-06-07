@@ -48,6 +48,7 @@ export const createFarmer = async (req, res) => {
       latitude,
       longitude,
       remarks,
+      documents = [] // array of { name, fileUrl }
     } = req.body;
 
     // Get the logged-in user's id
@@ -122,6 +123,7 @@ export const createFarmer = async (req, res) => {
       latitude,
       longitude,
       remarks,
+      documents,
     });
 
     await farmer.save();
@@ -363,46 +365,11 @@ export const updateFarmerById = async (req, res) => {
     const { id } = req.query;
     const userId = req.user.id;
 
-    const {
-      village,
-      subDistrict,
-      name,
-      gender,
-      category,
-      divyang,
-      aadharNumber,
-      panNumber,
-      birthYear,
-      agristackFarmerNumber,
-      mobileNo,
-      accountNumber,
-      bankName,
-      branchName,
-      branchIFSC,
-      education,
-      khatedarNumber8A,
-      landHolding8A,
-      groupNo7_12,
-      rainFedArea,
-      irrigatedArea,
-      irrigationSource,
-      irrigationSourceOther,
-      organicFarmingArea,
-      animals,
-
-      agriBusiness,
-      agriBusinessOther,
-      farmMachinery,
-      farmMachineryOther,
-      highTechAgriculture,
-      highTechAgricultureOther,
-
-      mainCrops,
-      mainCropsOther,
-      latitude,
-      longitude,
-      remarks,
-    } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(false, 400, "Invalid farmer ID"));
+    }
 
     const farmer = await Farmer.findById(id);
 
@@ -424,8 +391,15 @@ export const updateFarmerById = async (req, res) => {
         );
     }
 
-    // Validate village and subDistrict if present
-    if (req.body.hasOwnProperty("village")) {
+    const {
+      village,
+      subDistrict,
+      aadharNumber,
+      documents, // <-- Add support for updating documents
+    } = req.body;
+
+    // ✅ Validate village
+    if (village) {
       const villageExists = await Village.findById(village);
       if (!villageExists) {
         return res
@@ -435,7 +409,8 @@ export const updateFarmerById = async (req, res) => {
       farmer.village = village;
     }
 
-    if (req.body.hasOwnProperty("subDistrict")) {
+    // ✅ Validate subDistrict
+    if (subDistrict) {
       const subDistrictExists = await SubDistrict.findById(subDistrict);
       if (!subDistrictExists) {
         return res
@@ -445,71 +420,50 @@ export const updateFarmerById = async (req, res) => {
       farmer.subDistrict = subDistrict;
     }
 
-    // Check if aadharNumber is being updated and it's different from existing
-    if (
-      req.body.hasOwnProperty("aadharNumber") &&
-      req.body.aadharNumber !== farmer.aadharNumber
-    ) {
-      const existingAadhar = await Farmer.findOne({ aadharNumber: req.body.aadharNumber });
+    // ✅ Unique Aadhar check
+    if (aadharNumber && aadharNumber !== farmer.aadharNumber) {
+      const existingAadhar = await Farmer.findOne({ aadharNumber });
       if (existingAadhar && existingAadhar._id.toString() !== farmer._id.toString()) {
-        return res.status(400).json(
-          new ApiResponse(false, 400, "Aadhar number already exists.")
-        );
+        return res
+          .status(400)
+          .json(new ApiResponse(false, 400, "Aadhar number already exists"));
       }
     }
 
-    // List of simple fields to update
-    const fields = [
-      "name",
-      "gender",
-      "category",
-      "divyang",
-      "aadharNumber",
-      "panNumber",
-      "birthYear",
-      "agristackFarmerNumber",
-      "mobileNo",
-      "accountNumber",
-      "bankName",
-      "branchName",
-      "branchIFSC",
-      "education",
-      "khatedarNumber8A",
-      "landHolding8A",
-      "groupNo7_12",
-      "rainFedArea",
-      "irrigatedArea",
-      "irrigationSource",
-      "irrigationSourceOther",
-      "organicFarmingArea",
-      "animals",
-      "agriBusiness",
-      "agriBusinessOther",
-      "farmMachinery",
-      "farmMachineryOther",
-      "highTechAgriculture",
-      "highTechAgricultureOther",
-      "mainCrops",
-      "mainCropsOther",
-      "latitude",
-      "longitude",
-      "remarks",
+    // ✅ Fields that can be updated directly
+    const updatableFields = [
+      "name", "gender", "category", "divyang", "aadharNumber",
+      "panNumber", "birthYear", "agristackFarmerNumber", "mobileNo",
+      "accountNumber", "bankName", "branchName", "branchIFSC",
+      "education", "khatedarNumber8A", "landHolding8A", "groupNo7_12",
+      "rainFedArea", "irrigatedArea", "irrigationSource", "irrigationSourceOther",
+      "organicFarmingArea", "animals", "agriBusiness", "agriBusinessOther",
+      "farmMachinery", "farmMachineryOther", "highTechAgriculture",
+      "highTechAgricultureOther", "mainCrops", "mainCropsOther",
+      "latitude", "longitude", "remarks"
     ];
 
-    // Update fields if they are in the request body
-    fields.forEach((field) => {
+    for (const field of updatableFields) {
       if (req.body.hasOwnProperty(field)) {
         farmer[field] = req.body[field];
       }
-    });
+    }
+
+    // ✅ Update documents if provided
+    if (Array.isArray(documents)) {
+      // Either replace or merge with existing
+      farmer.documents = documents;
+    }
 
     await farmer.save();
 
     res
       .status(200)
-      .json(new ApiResponse(true, 200, "Farmer updated successfully", farmer));
+      .json(
+        new ApiResponse(true, 200, "Farmer updated successfully", farmer)
+      );
   } catch (error) {
-    console.error(error);
+    console.error("❌ updateFarmerById error:", error);
     res
       .status(500)
       .json(

@@ -17,6 +17,7 @@ import {
 } from "./src/controllers/authController.js";
 import connectDB from "./src/config/db.js";
 import validate from "./src/middleware/validate.js";
+import uploadRoutes from "./src/routes/upload.js";
 
 dotenv.config();
 const app = express();
@@ -47,6 +48,7 @@ app.post("/register-admin", validateRegistration, validate, registerAdmin);
 app.post("/login", login);
 app.get("/refresh-token", refresh);
 app.post("/logout", logout);
+
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "✅ Backend is up and running!",
@@ -58,6 +60,7 @@ app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/public",publicRoutes);
 app.use("/admin/list",listRoutes)
+app.use("/", uploadRoutes);
 connectDB()
   .then(() =>
     app.listen(process.env.PORT || 5000, () =>

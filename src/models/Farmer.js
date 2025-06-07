@@ -21,7 +21,7 @@ const farmerSchema = new mongoose.Schema(
     birthYear: { type: Number },
     agristackFarmerNumber: { type: String },
     mobileNo: { type: String },
-    accountNumber: { type: String,unique: true },
+    accountNumber: { type: String, unique: true },
     accountHolderName: { type: String },
     bankName: { type: String },
     branchName: { type: String },
@@ -41,6 +41,16 @@ const farmerSchema = new mongoose.Schema(
     },
     irrigationSourceOther: { type: String },
     organicFarmingArea: { type: Number }, // Organic area (ha)
+    documents: [
+      {
+        name: String, // e.g. "Aadhar", "LandRecord"
+        fileUrl: String, // full public URL
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
 
     // animals
     animals: [
