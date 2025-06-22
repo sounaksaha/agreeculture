@@ -48,7 +48,8 @@ export const createFarmer = async (req, res) => {
       latitude,
       longitude,
       remarks,
-      documents = [] // array of { name, fileUrl }
+      status,
+      documents = [], // array of { name, fileUrl }
     } = req.body;
 
     // Get the logged-in user's id
@@ -78,9 +79,9 @@ export const createFarmer = async (req, res) => {
     // Check if aadharNumber already exists
     const existingFarmer = await Farmer.findOne({ aadharNumber });
     if (existingFarmer) {
-      return res.status(400).json(
-        new ApiResponse(false, 400, "Aadhar number already exists.")
-      );
+      return res
+        .status(400)
+        .json(new ApiResponse(false, 400, "Aadhar number already exists."));
     }
 
     const farmer = new Farmer({
@@ -124,6 +125,7 @@ export const createFarmer = async (req, res) => {
       longitude,
       remarks,
       documents,
+      status: status || "pending",
     });
 
     await farmer.save();
@@ -164,7 +166,7 @@ export const getAllFarmers = async (req, res) => {
     }
 
     // Extract query filters
-    const { villageId, subDistrictId, search } = req.query;
+    const { villageId, subDistrictId, search, status } = req.query;
 
     // Aggregation Stages
     const lookupSubDistrictStage = {
@@ -216,6 +218,10 @@ export const getAllFarmers = async (req, res) => {
 
     if (subDistrictId && mongoose.Types.ObjectId.isValid(subDistrictId)) {
       baseMatch["subDistrict._id"] = new mongoose.Types.ObjectId(subDistrictId);
+    }
+
+    if (status && ["pending", "approved", "declined"].includes(status)) {
+      baseMatch.status = status;
     }
 
     // Search by name or aadharNumber
@@ -423,7 +429,10 @@ export const updateFarmerById = async (req, res) => {
     // ✅ Unique Aadhar check
     if (aadharNumber && aadharNumber !== farmer.aadharNumber) {
       const existingAadhar = await Farmer.findOne({ aadharNumber });
-      if (existingAadhar && existingAadhar._id.toString() !== farmer._id.toString()) {
+      if (
+        existingAadhar &&
+        existingAadhar._id.toString() !== farmer._id.toString()
+      ) {
         return res
           .status(400)
           .json(new ApiResponse(false, 400, "Aadhar number already exists"));
@@ -432,15 +441,41 @@ export const updateFarmerById = async (req, res) => {
 
     // ✅ Fields that can be updated directly
     const updatableFields = [
-      "name", "gender", "category", "divyang", "aadharNumber",
-      "panNumber", "birthYear", "agristackFarmerNumber", "mobileNo",
-      "accountNumber", "bankName", "branchName", "branchIFSC",
-      "education", "khatedarNumber8A", "landHolding8A", "groupNo7_12",
-      "rainFedArea", "irrigatedArea", "irrigationSource", "irrigationSourceOther",
-      "organicFarmingArea", "animals", "agriBusiness", "agriBusinessOther",
-      "farmMachinery", "farmMachineryOther", "highTechAgriculture",
-      "highTechAgricultureOther", "mainCrops", "mainCropsOther",
-      "latitude", "longitude", "remarks"
+      "name",
+      "gender",
+      "category",
+      "divyang",
+      "aadharNumber",
+      "panNumber",
+      "birthYear",
+      "agristackFarmerNumber",
+      "mobileNo",
+      "accountNumber",
+      "bankName",
+      "branchName",
+      "branchIFSC",
+      "education",
+      "khatedarNumber8A",
+      "landHolding8A",
+      "groupNo7_12",
+      "rainFedArea",
+      "irrigatedArea",
+      "irrigationSource",
+      "irrigationSourceOther",
+      "organicFarmingArea",
+      "animals",
+      "agriBusiness",
+      "agriBusinessOther",
+      "farmMachinery",
+      "farmMachineryOther",
+      "highTechAgriculture",
+      "highTechAgricultureOther",
+      "mainCrops",
+      "mainCropsOther",
+      "latitude",
+      "longitude",
+      "remarks",
+      "status",
     ];
 
     for (const field of updatableFields) {
@@ -459,9 +494,7 @@ export const updateFarmerById = async (req, res) => {
 
     res
       .status(200)
-      .json(
-        new ApiResponse(true, 200, "Farmer updated successfully", farmer)
-      );
+      .json(new ApiResponse(true, 200, "Farmer updated successfully", farmer));
   } catch (error) {
     console.error("❌ updateFarmerById error:", error);
     res
@@ -552,6 +585,8 @@ export const getAvailableFarmersForGroup = async (req, res) => {
       ];
     }
 
+    exclusionFilter["status"] = "pending";
+
     // 4️⃣ Fetch filtered farmers
     const farmers = await Farmer.find(exclusionFilter)
       .skip(skip)
@@ -577,5 +612,47 @@ export const getAvailableFarmersForGroup = async (req, res) => {
         error: error.message,
       })
     );
+  }
+};
+
+export const changeFarmerStatus = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const { status, remarks } = req.body;
+
+    const validStatuses = ["pending", "approved", "declined"];
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(false, 400, "Invalid status value."));
+    }
+
+    const group = await Farmer.findById(id);
+    if (!group) {
+      return res
+        .status(404)
+        .json(new ApiResponse(false, 404, "Farmer not found."));
+    }
+
+    group.status = status;
+    if (remarks) group.remarks = remarks;
+
+    const updated = await group.save();
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          true,
+          200,
+          `Status updated to ${status} successfully.`,
+          updated
+        )
+      );
+  } catch (error) {
+    console.error("Error updating farmer status:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(false, 500, "Server Error", error.message));
   }
 };

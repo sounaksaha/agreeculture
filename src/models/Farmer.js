@@ -51,7 +51,11 @@ const farmerSchema = new mongoose.Schema(
         },
       },
     ],
-
+    status: {
+      type: String,
+      enum: ["pending", "approved", "declined"],
+      default: "pending",
+    },
     // animals
     animals: [
       {

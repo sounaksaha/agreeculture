@@ -1,6 +1,7 @@
 import express from "express";
 import { authorizeRoles, verifyToken } from "../middleware/auth.js";
 import {
+  changeFarmerStatus,
   getAllFarmers,
   getAvailableFarmersForGroup,
   getFarmerById,
@@ -36,6 +37,13 @@ router.get(
   verifyToken,
   authorizeRoles("user", "admin"),
   getFarmerById
+);
+
+router.patch(
+  "/change-farmer-status",
+  verifyToken,
+  authorizeRoles("user", "admin"),
+  changeFarmerStatus
 );
 
 router.get(
@@ -79,7 +87,7 @@ router.delete(
 );
 
 router.patch(
-  "/change-groupt-status",
+  "/change-group-status",
   verifyToken,
   authorizeRoles("user", "admin"),
   changeFarmerGroupStatus
